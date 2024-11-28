@@ -108,8 +108,10 @@
 	\item \textbf{GitLab}: GitLab CE 15.x
 	\item \textbf{GitLab Runner}: Version kompatibel mit GitLab CE 15.x
 	\item \textbf{LDAP}: OpenLDAP 2.6.x
-	\item \textbf{Optionale Überwachung}: AWS CloudWatch zur Protokollierung und Überwachung.
+	\item \textbf{Monitoring}: AWS CloudWatch zur Protokollierung und Überwachung.
 \end{itemize}
+
+\newpage
 
 \section{Tests}
 \subsection*{DNS Resolution Testing}
@@ -174,20 +176,72 @@
 	\item \textbf{Erwartetes Ergebnis:} Der Server bleibt auch unter Last genau und leistungsfähig.
 \end{itemize}
 
+subsection*{LDAP-Authentifizierungstest}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Funktionalität des Authentifizierungssystems überprüfen.
+	\item \textbf{Methode:} Benutzeranmeldungen über LDAP versuchen. Tests mit gültigen und ungültigen Anmeldedaten durchführen.
+	\item \textbf{Erwartetes Ergebnis:} Anmeldeversuche sollten für gültige Anmeldedaten akzeptiert und für ungültige Anmeldedaten abgelehnt werden.
+\end{itemize}
+
+\subsection*{LDAP-Suche und -Filterung}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Genauigkeit der LDAP-Suche und -Filterung bestätigen.
+	\item \textbf{Methode:} Suchen nach bestimmten Benutzergruppen oder Attributen durchführen und Filter testen.
+	\item \textbf{Erwartetes Ergebnis:} Für jede Suche und jeden Filter werden die korrekten Daten zurückgegeben.
+\end{itemize}
+
+\subsection*{Benutzer- und Gruppenverwaltung}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Testen der Erstellung und Änderung von Benutzern und Gruppen.
+	\item \textbf{Methode:} Gruppen und Benutzer erstellen sowie deren Attribute ändern. Änderungen im LDAP-Verzeichnis überwachen.
+	\item \textbf{Erwartetes Ergebnis:} Alle Änderungen werden korrekt im LDAP-Verzeichnis angezeigt.
+\end{itemize}
+
+\subsection*{LDAP-Integrationstest}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Testen, ob die Integration der GitLab-Authentifizierung mit LDAP funktioniert.
+	\item \textbf{Methode:} Anmeldungen bei GitLab mit LDAP-Anmeldedaten (verschiedene Rollen) durchführen.
+	\item \textbf{Erwartetes Ergebnis:} Benutzeranmeldungen werden mit LDAP-Anmeldedaten akzeptiert.
+\end{itemize}
+
+\subsection*{Repository-Operationen}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Testen, ob Standard-Git-Operationen innerhalb von GitLab funktionieren.
+	\item \textbf{Methode:} Neben der Erstellung von Repositories werden Pull-, Push- und Merge-Operationen getestet. Zusätzlich werden Branches erstellt und gelöscht.
+	\item \textbf{Erwartetes Ergebnis:} Änderungen entsprechen den erwarteten Ergebnissen der Git-Operationen.
+\end{itemize}
+
+\subsection*{CI/CD-Pipeline-Test}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Funktionalität der CI/CD-Pipeline überprüfen.
+	\item \textbf{Methode:} Geänderten Code pushen und die automatische Ausführung der CI/CD-Pipeline beobachten. Erfolg des Builds und der Bereitstellung prüfen.
+	\item \textbf{Erwartetes Ergebnis:} Codeänderungen werden automatisch gebaut und fehlerfrei bereitgestellt.
+\end{itemize}
+
+\subsection*{Lasttest}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Leistung von GitLab unter hoher Last bewerten.
+	\item \textbf{Methode:} Mehrere Benutzer simulieren, die gleichzeitig Git-Operationen durchführen.
+	\item \textbf{Erwartetes Ergebnis:} GitLab hält die Leistungsniveaus auch bei gleichzeitiger Nutzung aufrecht.
+\end{itemize}
+
+\newpage
 
 \section{Rollen und Verantwortlichkeiten im Team}
 
 \begin{table}[h!]
 	\centering
-	\begin{tabular}{|l|l|}
-		\hline
-		\textbf{Rolle}      & \textbf{Verantwortlichkeiten}                   \\ \hline
-		Netzwerk-Architekt  & Planung und Einrichtung der VPC und Subnetze    \\ \hline
-		DevOps-Ingenieur    & Bereitstellung von GitLab und CI/CD             \\ \hline
-		Systemadministrator & Konfiguration von DNS- und LDAP-Servern         \\ \hline
-		QA-Ingenieur        & Testen der Dienste und Sicherheitskonfiguration \\ \hline
-	\end{tabular}
-	\caption{Rollen und Verantwortlichkeiten}
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|}
+			\hline
+			\textbf{Samuel Hammerschmidt} & \textbf{Lorenz Rentenberger} & \textbf{Nikolas Schodl} & \textbf{Alexander Weidinger} \\ \hline
+			LDAP Server                   & DNS Server (CloudWatch)      & GitLab Server           & GitLab Server                \\ \hline
+			AWS Cloud Config              & AWS Cloud Config             & AWS Cloud Config        & AWS Cloud Config             \\ \hline
+			Tests LDAP                    & Tests DNS                    & Tests GitLab            & Tests GitLab                 \\ \hline
+		\end{tabular}
+	}
+	\caption{Team-Aufgaben und Zuständigkeiten}
+	\label{tab:team-responsibilities}
 \end{table}
 
 
@@ -197,5 +251,12 @@ AWS CloudWatch wird zur Protokollierung und Überwachung genutzt:
 	\item Überwachung der CPU-, Speicher- und Netzwerknutzung.
 	\item Automatische Alarme bei Ausfällen.
 \end{itemize}
+
+\newpage
+\addcontentsline{toc}{section}{Abbildungsverzeichnis}
+\listoffigures
+\newpage
+\addcontentsline{toc}{section}{Tabellenverzeichnis}
+\listoftables
 
 \end{document}
