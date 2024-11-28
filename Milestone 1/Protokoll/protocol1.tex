@@ -1,0 +1,196 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+
+\geometry{a4paper, margin=1in}
+
+\title{Milestone 1: Infrastruktur-Spezifikation}
+\author{Hammerschmidt, Rentenberger, Schodl, Weidinger}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Netzwerktopologie}
+Die Infrastruktur wird in einer \textbf{AWS VPC} implementiert und besteht aus mehreren Subnetzen:
+\begin{itemize}
+    \item \textbf{Privates Subnetz}: Für interne Dienste wie LDAP, DNS und GitLab Runner.
+    \item \textbf{Öffentliches Subnetz}: Für den GitLab-Server (mit eingeschränktem Zugriff von außen).
+    \item \textbf{Routentabelle}: Konfiguration des Datenflusses zwischen Subnetzen und Internet-Gateway.
+\end{itemize}
+
+\textbf{Graphische Darstellung:} Ein Diagramm zeigt hier
+\begin{itemize}
+    \item Virtuelle Maschinen (VMs) und deren IP-Adressen.
+    \item Subnetze (privat/öffentlich) und CIDR-Blöcke.
+    \item Routing zwischen den Subnetzen.
+    \item DNS- und FQDN-Konventionen.
+\end{itemize}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \textbf{Dienst}          & \textbf{Subnetztyp}      & \textbf{IP-Adresse} & \textbf{FQDN}             \\ \hline
+    Primärer DNS             & Privates Subnetz         & 10.0.1.10           & dns1.intern.local         \\ \hline
+    Sekundärer DNS           & Privates Subnetz         & 10.0.1.11           & dns2.intern.local         \\ \hline
+    GitLab Server            & Öffentliches Subnetz     & 10.0.2.10           & gitlab.intern.local       \\ \hline
+    GitLab Runner            & Privates Subnetz         & 10.0.1.20           & runner.intern.local       \\ \hline
+    LDAP Server              & Privates Subnetz         & 10.0.1.30           & ldap.intern.local         \\ \hline
+    \end{tabular}
+    \caption{Netzwerkdienste und IP-Zuordnung}
+\end{table}
+
+\section{Geplante Security Groups und Regeln}
+Die Security Groups definieren, welche Dienste und Ports erreichbar sind:
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Dienst}      & \textbf{Eingehend (Ingress)}          & \textbf{Ausgehend (Egress)}         \\ \hline
+    DNS                 & Port 53 (UDP/TCP) von privatem Subnetz & Alle Ports ins VPC-Netz             \\ \hline
+    GitLab              & Port 80/443 (HTTP/HTTPS) von bestimmten IPs & Alle Ports ins VPC-Netz             \\ \hline
+    GitLab Runner       & Port 8093 von GitLab-Server            & Alle Ports ins VPC-Netz             \\ \hline
+    LDAP                & Port 389 (LDAP) nur aus privatem Subnetz & Alle Ports ins VPC-Netz             \\ \hline
+    \end{tabular}
+    \caption{Geplante Security Groups und Regeln}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+    \hline
+    \textbf{Inbound SGRs} & \textbf{DNS}              & \textbf{Bastion}         & \textbf{LDAP/GitLab-R}    & \textbf{GitLab-Server}    \\ \hline
+    HTTP                  & Nein                      & Nein                     & Nein                      & Ja (0.0.0.0/0)           \\ \hline
+    HTTPS                 & Nein                      & Nein                     & Ja (10.0.0.0/24)          & Ja (0.0.0.0/0)           \\ \hline
+    SSH                   & Ja (10.0.0.0/24)          & Ja (0.0.0.0/0)           & Ja (0.0.0.0/0)            & Ja (0.0.0.0/0)           \\ \hline
+    DNS (UDP)             & Ja (10.0.0.0/24)          & Nein                     & Nein                      & Nein                     \\ \hline
+    DNS (TCP)             & Ja (10.0.0.0/24)          & Nein                     & Nein                      & Nein                     \\ \hline
+    LDAP                  & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Ja (0.0.0.0/0)           \\ \hline
+    ALL ICMP              & Ja (0.0.0.0/0)            & Nein                     & Nein                      & Ja (10.0.0.0/24)         \\ \hline
+    \end{tabular}
+    \caption{Eingehende Sicherheitsgruppenregeln (SGRs) für verschiedene Dienste}
+    \label{tab:inbound-sgrs}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+    \hline
+    \textbf{Outbound SGRs} & \textbf{DNS}              & \textbf{Bastion}         & \textbf{LDAP/GitLab-R}    & \textbf{GitLab-Server}    \\ \hline
+    HTTP                   & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Nein                     \\ \hline
+    HTTPS                  & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Nein                     \\ \hline
+    SSH                    & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Nein                     \\ \hline
+    DNS (UDP)              & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Nein                     \\ \hline
+    DNS (TCP)              & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Nein                     \\ \hline
+    LDAP                   & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Ja (0.0.0.0/0)           \\ \hline
+    ALL ICMP               & Nein                      & Nein                     & Ja (0.0.0.0/0)            & Nein                     \\ \hline
+    ALL Traffic            & Ja (0.0.0.0/0)            & Ja (0.0.0.0/0)           & Nein                      & Ja (0.0.0.0/0)           \\ \hline
+    \end{tabular}
+    \caption{Ausgehende Sicherheitsgruppenregeln (SGRs) für verschiedene Dienste}
+    \label{tab:outbound-sgrs}
+\end{table}
+
+\section{Dienste-Zuordnung zu Server-Instanzen}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Serverinstanz} & \textbf{Betriebssystem}  & \textbf{Dienste}         \\ \hline
+    DNS-Server 1           & Ubuntu 22.04 LTS        & BIND (Primärer DNS)      \\ \hline
+    DNS-Server 2           & Ubuntu 22.04 LTS        & BIND (Sekundärer DNS)    \\ \hline
+    GitLab Server          & Ubuntu 22.04 LTS        & GitLab CE                \\ \hline
+    GitLab Runner          & Ubuntu 22.04 LTS        & GitLab Runner            \\ \hline
+    LDAP Server            & Ubuntu 22.04 LTS        & OpenLDAP                 \\ \hline
+    \end{tabular}
+    \caption{Dienste-Zuordnung zu Server-Instanzen}
+\end{table}
+
+\section{Spezifikationen der eingesetzten Systeme}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|l|l|l|l|}
+    \hline
+    \textbf{Server}               & \textbf{OS}                 & \textbf{Packages}          & \textbf{Version}                     & \textbf{Server Instance} \\ \hline
+    Preferred DNS Server          & Ubuntu Server              & bind9, bind9utils          & BIND 9.18.19 / Ubuntu 22.04.3 LTS    & T3.micro                \\ \hline
+    Alternative DNS Server        & Ubuntu Server              & bind9, bind9utils          & BIND 9.18.19 / Ubuntu 22.04.3 LTS    & T3.micro                \\ \hline
+    LDAP Server                   & Ubuntu Server              & slapd, ldap-utils          & OpenLDAP 2.6.6                       & T3.micro                \\ \hline
+    GitLab Runner                 & Ubuntu Server              & -                          & Ubuntu 22.04.3 LTS                   & T3.micro                \\ \hline
+    GitLab Server                 & Ubuntu Server              & GitLab CE                  & GitLab CE / Ubuntu 22.04.3 LTS       & T2.Large                \\ \hline
+    \end{tabular}
+    \caption{Server-Spezifikationen: Betriebssystem, Pakete und Instanztypen}
+    \label{tab:server-specs}
+\end{table}
+    
+\begin{itemize}
+    \item \textbf{Betriebssystem}: Ubuntu 22.04 LTS (64-bit)
+    \item \textbf{DNS-Server}: BIND 9.18
+    \item \textbf{GitLab}: GitLab CE 15.x
+    \item \textbf{GitLab Runner}: Version kompatibel mit GitLab CE 15.x
+    \item \textbf{LDAP}: OpenLDAP 2.5.x
+    \item \textbf{Optionale Überwachung}: AWS CloudWatch zur Protokollierung und Überwachung.
+\end{itemize}
+
+\section{Geplante Tests zur Funktionsprüfung}
+\begin{enumerate}
+    \item \textbf{DNS-Server}:
+    \begin{itemize}
+        \item Überprüfung der Namensauflösung über \texttt{dig} und \texttt{nslookup}.
+        \item Test der Replikation zwischen primärem und sekundärem DNS.
+    \end{itemize}
+    \item \textbf{GitLab-Server}:
+    \begin{itemize}
+        \item Überprüfung der Weboberfläche auf Port 80/443.
+        \item Push und Pull in ein Repository testen.
+        \item CI/CD-Pipeline ausführen.
+    \end{itemize}
+    \item \textbf{GitLab Runner}:
+    \begin{itemize}
+        \item Test eines einfachen CI/CD-Jobs.
+    \end{itemize}
+    \item \textbf{LDAP-Server}:
+    \begin{itemize}
+        \item Verbindung und Authentifizierung mit \texttt{ldapsearch} und \texttt{ldapwhoami}.
+        \item Integration mit GitLab testen.
+    \end{itemize}
+\end{enumerate}
+
+\section{Rollen und Verantwortlichkeiten im Team}
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Rolle}            & \textbf{Verantwortlichkeiten}               \\ \hline
+    Netzwerk-Architekt        & Planung und Einrichtung der VPC und Subnetze \\ \hline
+    DevOps-Ingenieur          & Bereitstellung von GitLab und CI/CD         \\ \hline
+    Systemadministrator       & Konfiguration von DNS- und LDAP-Servern     \\ \hline
+    QA-Ingenieur              & Testen der Dienste und Sicherheitskonfiguration \\ \hline
+    \end{tabular}
+    \caption{Rollen und Verantwortlichkeiten}
+\end{table}
+
+\section{FQDN und interne Domain}
+Die interne Domain wird als \textbf{intern.local} festgelegt. Beispiele:
+\begin{itemize}
+    \item DNS-Server: \texttt{dns1.intern.local}, \texttt{dns2.intern.local}.
+    \item GitLab: \texttt{gitlab.intern.local}.
+\end{itemize}
+
+\section*{Optional: Monitoring}
+AWS CloudWatch wird zur Protokollierung und Überwachung genutzt:
+\begin{itemize}
+    \item Überwachung der CPU-, Speicher- und Netzwerknutzung.
+    \item Automatische Alarme bei Ausfällen.
+\end{itemize}
+
+\end{document}
