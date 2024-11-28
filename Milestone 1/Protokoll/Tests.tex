@@ -1,0 +1,76 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\begin{document}
+
+\title{DNS Testing Procedures}
+\author{}
+\date{}
+\maketitle
+
+\section*{DNS Resolution Testing}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Ensure the BIND server correctly resolves domain names.
+    \item \textbf{Method:} Use the \texttt{dig} command to query the DNS server for known domains. Check \texttt{A}, \texttt{AAAA}, \texttt{MX}, and \texttt{NS} records:
+    \begin{verbatim}
+    dig @<DNS-server> example.com [A, AAAA, MX, NS]
+    \end{verbatim}
+    \item \textbf{Expected Outcome:} Each query returns the correct IP addresses and record details.
+\end{itemize}
+
+\section*{Forward and Reverse DNS Lookup}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Verify that forward and reverse lookups are functional.
+    \item \textbf{Method:}
+    \begin{itemize}
+        \item Use \texttt{dig} for forward lookup (domain to IP):
+        \begin{verbatim}
+        dig @<DNS-server> example.com A
+        \end{verbatim}
+        \item Use \texttt{dig -x} for reverse lookup (IP to domain):
+        \begin{verbatim}
+        dig @<DNS-server> -x [192.0.2.1]
+        \end{verbatim}
+    \end{itemize}
+    \item \textbf{Expected Outcome:} Accurate mapping between domain names and IP addresses.
+\end{itemize}
+
+\section*{Zone Transfer Test}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Ensure zone transfers between primary and secondary DNS servers are working.
+    \item \textbf{Method:} Initiate a zone transfer using \texttt{dig AXFR} and check logs for the transfer:
+    \begin{verbatim}
+    dig @<primary-DNS-server> example.com AXFR
+    \end{verbatim}
+    \item \textbf{Expected Outcome:} Zone data is accurately replicated between primary and secondary servers.
+\end{itemize}
+
+\section*{DNS Failover Testing}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Assess the resilience and reliability of the DNS service under failure conditions.
+    \item \textbf{Method:}
+    \begin{itemize}
+        \item Simulate a failure of the primary DNS server.
+        \item Monitor the response from the secondary DNS server:
+        \begin{verbatim}
+        dig @<secondary-DNS-server> example.com A
+        \end{verbatim}
+        \item Record any downtime experienced during the transition.
+    \end{itemize}
+    \item \textbf{Expected Outcome:} The secondary DNS server seamlessly takes over with little to no disruption in DNS resolution.
+\end{itemize}
+
+\section*{Stress Testing}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Test the performance of the server under high load.
+    \item \textbf{Method:} Use tools such as \texttt{dnsperf} to simulate a high number of DNS queries:
+    \begin{verbatim}
+    dnsperf -s <primary-DNS-IP> -d queries.txt -l 30
+    \end{verbatim}
+    \item \textbf{Expected Outcome:} The server maintains accuracy and performs well under the load.
+\end{itemize}
+
+\end{document}
