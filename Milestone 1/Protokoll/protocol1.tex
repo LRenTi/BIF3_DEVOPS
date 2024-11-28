@@ -5,6 +5,7 @@
 \usepackage{graphicx}
 \usepackage{geometry}
 \usepackage{hyperref}
+\usepackage{enumitem}
 
 \geometry{a4paper, margin=1in}
 
@@ -19,31 +20,18 @@
 \newpage
 
 \section{Netzwerktopologie}
-Die Infrastruktur wird in einer \textbf{AWS VPC} implementiert und besteht aus mehreren Subnetzen:
-\begin{itemize}
-    \item \textbf{Privates Subnetz}: Für interne Dienste wie LDAP, DNS und GitLab Runner.
-    \item \textbf{Öffentliches Subnetz}: Für den GitLab-Server (mit eingeschränktem Zugriff von außen).
-    \item \textbf{Routentabelle}: Konfiguration des Datenflusses zwischen Subnetzen und Internet-Gateway.
-\end{itemize}
 
-\textbf{Graphische Darstellung:} Ein Diagramm zeigt hier
-\begin{itemize}
-    \item Virtuelle Maschinen (VMs) und deren IP-Adressen.
-    \item Subnetze (privat/öffentlich) und CIDR-Blöcke.
-    \item Routing zwischen den Subnetzen.
-    \item DNS- und FQDN-Konventionen.
-\end{itemize}
+\textbf{Graphik hier einfügen}
 
 \begin{table}[h!]
     \centering
     \begin{tabular}{|l|l|l|l|}
     \hline
     \textbf{Dienst}          & \textbf{Subnetztyp}      & \textbf{IP-Adresse} & \textbf{FQDN}             \\ \hline
-    Primärer DNS             & Privates Subnetz         & 10.0.1.10           & dns1.intern.local         \\ \hline
-    Sekundärer DNS           & Privates Subnetz         & 10.0.1.11           & dns2.intern.local         \\ \hline
-    GitLab Server            & Öffentliches Subnetz     & 10.0.2.10           & gitlab.intern.local       \\ \hline
-    GitLab Runner            & Privates Subnetz         & 10.0.1.20           & runner.intern.local       \\ \hline
-    LDAP Server              & Privates Subnetz         & 10.0.1.30           & ldap.intern.local         \\ \hline
+    Primärer DNS             & Privates Subnetz         & 10.0.1.10                & dns1.semester.at         \\ \hline
+    Sekundärer DNS           & Privates Subnetz         & 10.0.1.11                & dns2.semester.at         \\ \hline
+    GitLab Server            & Öffentliches Subnetz     & 10.0.0.10                & gitlab.semester.at       \\ \hline
+    LDAP Server              & Privates Subnetz         & 10.0.2.10                & server-ldap.semester.at         \\ \hline
     \end{tabular}
     \caption{Netzwerkdienste und IP-Zuordnung}
 \end{table}
@@ -141,29 +129,68 @@ Die Security Groups definieren, welche Dienste und Ports erreichbar sind:
     \item \textbf{Optionale Überwachung}: AWS CloudWatch zur Protokollierung und Überwachung.
 \end{itemize}
 
-\section{Geplante Tests zur Funktionsprüfung}
-\begin{enumerate}
-    \item \textbf{DNS-Server}:
+\section{Tests}
+\subsection*{DNS Resolution Testing}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Ensure the BIND server correctly resolves domain names.
+    \item \textbf{Method:} Use the \texttt{dig} command to query the DNS server for known domains. Check \texttt{A}, \texttt{AAAA}, \texttt{MX}, and \texttt{NS} records:
+    \begin{verbatim}
+    dig @<DNS-server> example.com [A, AAAA, MX, NS]
+    \end{verbatim}
+    \item \textbf{Expected Outcome:} Each query returns the correct IP addresses and record details.
+\end{itemize}
+
+\subsection*{Forward and Reverse DNS Lookup}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Verify that forward and reverse lookups are functional.
+    \item \textbf{Method:}
     \begin{itemize}
-        \item Überprüfung der Namensauflösung über \texttt{dig} und \texttt{nslookup}.
-        \item Test der Replikation zwischen primärem und sekundärem DNS.
+        \item Use \texttt{dig} for forward lookup (domain to IP):
+        \begin{verbatim}
+        dig @<DNS-server> example.com A
+        \end{verbatim}
+        \item Use \texttt{dig -x} for reverse lookup (IP to domain):
+        \begin{verbatim}
+        dig @<DNS-server> -x [192.0.2.1]
+        \end{verbatim}
     \end{itemize}
-    \item \textbf{GitLab-Server}:
+    \item \textbf{Expected Outcome:} Accurate mapping between domain names and IP addresses.
+\end{itemize}
+
+\subsection*{Zone Transfer Test}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Ensure zone transfers between primary and secondary DNS servers are working.
+    \item \textbf{Method:} Initiate a zone transfer using \texttt{dig AXFR} and check logs for the transfer:
+    \begin{verbatim}
+    dig @<primary-DNS-server> example.com AXFR
+    \end{verbatim}
+    \item \textbf{Expected Outcome:} Zone data is accurately replicated between primary and secondary servers.
+\end{itemize}
+
+\subsection*{DNS Failover Testing}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Assess the resilience and reliability of the DNS service under failure conditions.
+    \item \textbf{Method:}
     \begin{itemize}
-        \item Überprüfung der Weboberfläche auf Port 80/443.
-        \item Push und Pull in ein Repository testen.
-        \item CI/CD-Pipeline ausführen.
+        \item Simulate a failure of the primary DNS server.
+        \item Monitor the response from the secondary DNS server:
+        \begin{verbatim}
+        dig @<secondary-DNS-server> example.com A
+        \end{verbatim}
+        \item Record any downtime experienced during the transition.
     \end{itemize}
-    \item \textbf{GitLab Runner}:
-    \begin{itemize}
-        \item Test eines einfachen CI/CD-Jobs.
-    \end{itemize}
-    \item \textbf{LDAP-Server}:
-    \begin{itemize}
-        \item Verbindung und Authentifizierung mit \texttt{ldapsearch} und \texttt{ldapwhoami}.
-        \item Integration mit GitLab testen.
-    \end{itemize}
-\end{enumerate}
+    \item \textbf{Expected Outcome:} The secondary DNS server seamlessly takes over with little to no disruption in DNS resolution.
+\end{itemize}
+
+\section*{Stress Testing}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Objective:} Test the performance of the server under high load.
+    \item \textbf{Method:} Use tools such as \texttt{dnsperf} to simulate a high number of DNS queries:
+    \begin{verbatim}
+    dnsperf -s <primary-DNS-IP> -d queries.txt -l 30
+    \end{verbatim}
+    \item \textbf{Expected Outcome:} The server maintains accuracy and performs well under the load.
+\end{itemize}
 
 \section{Rollen und Verantwortlichkeiten im Team}
 \begin{table}[h!]
