@@ -259,7 +259,7 @@ AWS CloudWatch wird zur Protokollierung und Überwachung genutzt:
 \section{VPC erstellen}
 
 Um ein VPC zu erstellen müssen wir zuerst sicherstellen, dass wir in der richtigen Region sind. 
-In unserem Fall ist das "us-east-1". 
+In unserem Fall ist das 'us-east-1'. 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.5\textwidth]{data/Choose_Region.png}
@@ -285,7 +285,7 @@ Beim Erstellen vom Public Subnet, gehen wir die selbe Schritte durch,
 ändern den CIDR-Block jedoch auf 10.0.2.0/24.
 
 \subsubsection{Enabling Auto-assign IP for Public Subnet}
-Wichtig zum Erwähnen ist die Aktivierung der Option "Enable auto-assign public IPv4 address". 
+Wichtig zum Erwähnen ist die Aktivierung der Option 'Enable auto-assign public IPv4 address'. 
 Das sorgt dafür, dass jeder neu erstellten EC2 Instanz eine neue IP Adresse zugewiesen wird.
 \begin{figure}[H]
 	\centering
@@ -324,7 +324,7 @@ Beim Gateway unter 'Actions -> Attach to VPC' fügen wir diesen hinzu.
 
 \subsubsection{Routing Table}
 Jetzt aktualisieren wir die neue Routing Table, damit das Gateway Internetzugriff hat.
-In dem Tab "Route Tables" editieren wir den Table mit dem Namen "rtb-public-semester".
+In dem Tab 'Route Tables' editieren wir den Table mit dem Namen 'rtb-public-semester'.
 
 \begin{figure}[h!]
 	\centering
