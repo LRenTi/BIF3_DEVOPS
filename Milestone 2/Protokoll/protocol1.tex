@@ -482,7 +482,7 @@ Danach ermöglichen wir SSH Agent Forwarding durch Änderung des files \~{} \tex
 		Host example.com 
 		ForwardAgent yes
 \end{verbatim}
-Nun müssen wir example.com mit der public IPV4 Adresse von GitLab ersetzen. 
+Nun müssen wir example.com mit der Public IPV4 Adresse von GitLab ersetzen. 
 Dies muss bei jedem Neustart des GitLab Servers wiederholt werden, weil sich die IP-Adresse bei jedem Start ändert.
 
 
@@ -500,7 +500,7 @@ Und auch um vom GitLab Server zu einem Private Subnet Server springen.
 
 \subsection{Aktualisieren des Betriebssystems}
 
-Sobald wir auf dem primary DNS Server sind müssen wir zuerst sicherstellen, dass das Betriebssystem auf dem neusesten Stand ist.
+Sobald wir auf dem Primary DNS Server sind müssen wir zuerst sicherstellen, dass das Betriebssystem auf dem neusesten Stand ist.
 Um das zu erreichen führen wir die folgenden Commands aus.
 \begin{verbatim}
 		sudo apt update && sudo apt upgrade && sudo apt full-upgrade
@@ -512,7 +512,7 @@ Um das zu erreichen führen wir die folgenden Commands aus.
 Nun konfigurieren wir die beiden DNS Server.
 \subsection{Installation von BIND9}
 Nachdem wir sichergegangen sind, dass das Betriebssystem auf dem neuesten Stand ist installieren wir BIND9. 
-Eine Software Package mit welchem namens resolution machen können. Das erreichen wir mit dem folgenden command:
+Eine Software Package mit welchem Namens Resolution machen können. Das erreichen wir mit dem folgenden command:
 \begin{verbatim}
 		sudo apt install bind9 bind9utils bind9-doc
 \end{verbatim}
@@ -552,7 +552,7 @@ In dieser benennen wir alle Clients denen wir Zugriff auf den Name Server geben 
 
 
 \subsubsection{Konfiguration der Allgemeine Optionen}
-Nun editieren wir den Options Block in dem textit{named.conf.options} File um generelle Einstellungen festzulegen.
+Nun editieren wir den Options Block in dem \textit{named.conf.options} File um generelle Einstellungen festzulegen.
 \begin{verbatim}
 options {
 		directory "/var/cache/bind";
@@ -567,7 +567,7 @@ options {
 		...
 };
 \end{verbatim}
-Wenn der DNS Server eine Anfrage bekommt, welche er nicht selbst beantworten kann, schickt er diese an den unter textit{forwarders} definierten Name Server.
+Wenn der DNS Server eine Anfrage bekommt, welche er nicht selbst beantworten kann, schickt er diese an den unter \textit{forwarders} definierten Name Server.
 
 
 \subsubsection{Konfiguration des “Local” Files}
@@ -617,7 +617,7 @@ Zuerst müssen wir das Directory erstellen. Hier werden wir auch die Forward Zon
 \begin{verbatim}
 		sudo mkdir /etc/bind/zones
 \end{verbatim}
-Jetzt erstellen wir das zone file:
+Jetzt erstellen wir das Zone File:
 \begin{verbatim}
 		sudo nano /etc/bind/zones/db.semesterDevOps.com
 \end{verbatim}
@@ -663,7 +663,7 @@ Lassen Sie uns die Zonendatei erstellen:
 		;
 		$TTL 604800
 		@ IN SOA ns1.semesterDevOps.com. admin.semesterDevOps.com. (
-				2024011201 ; Serial (YYYYMMDDnn)
+				1 ; Serial
 				604800 ; Refresh
 				86400 ; Retry
 				2419200 ; Expire
@@ -731,7 +731,7 @@ sudo nano /etc/bind/zones/db.10.0.2
 \end{verbatim}
 
 \paragraph{Überprüfen der BIND Configuration Syntax}
-Wir können die Syntax aller named.conf* Files mit dem folgenden Command überprüfen:
+Wir können die Syntax aller \textit{named.conf} Files mit dem folgenden Command überprüfen:
 
 \begin{verbatim}
 		sudo named-checkconf
@@ -752,7 +752,7 @@ und alle Anfragen beantworten, wenn der primäre DNS-Server nicht verfügbar ist
 
 \subsection{Einrichten der Zugriffskontrollliste und allgemeiner Optionen}  
 
-Sowie der erste DNS, brauch der Zweite ebenfalls eine Access control list.
+Sowie der erste DNS, brauch der Zweite ebenfalls eine Access Control List.
 \begin{verbatim}
 	acl "trusted" {
 		10.0.2.225
@@ -778,7 +778,7 @@ Sowie der erste DNS, brauch der Zweite ebenfalls eine Access control list.
 
 \subsection{Konfigurieren vom Local File}
 Die Local Files vom zweiten DNS wird genau so konfiguriert wie vom Ersten. 
-Es gibt nur kleine Unterschiede wie die "type": 
+Es gibt nur kleine Unterschiede wie \texttt{type secondary} statt \texttt{type primary}.: 
 
 
 \begin{verbatim}
@@ -915,7 +915,7 @@ Es gibt mehrere Möglichkeiten, um zu testen, ob der sekundäre DNS-Server wie v
 \begin{enumerate}  
     \item \textbf{Direkte Abfrage des sekundären DNS-Servers mit \texttt{dig}}  
     \begin{verbatim}
-    dig @10.0.2.10 gitlab.semester.DevOps.com
+    dig @10.0.2.10 gitlab.semesterDevOps.com
     \end{verbatim}  
 
     \item \textbf{DNS-Primary-Instanz stoppen und Abfragen testen}  
