@@ -256,9 +256,9 @@ AWS CloudWatch wird zur Protokollierung und Überwachung genutzt:
 	\item Automatische Alarme bei Ausfällen.
 \end{itemize}
 
-\section{Create VPC}
+\section{VPC erstellen}
 
-Um ein VPC zu erstellen müssen wir zu erst Sicherstellen, dass wir in der richtigen Region sind. 
+Um ein VPC zu erstellen müssen wir zuerst sicherstellen, dass wir in der richtigen Region sind. 
 In unserem Fall ist das "us-east-1". 
 \begin{figure}[H]
 	\centering
@@ -270,7 +270,7 @@ In unserem Fall ist das "us-east-1".
 \section{Creating Subnets}
 \subsection{Public Subnet}
 
-Zuerst erstellten wir ein öffenltiches Subnet. 
+Zuerst erstellen wir ein öffenltiches Subnet. 
 Wie im Bild unten angeführt, wählen wir den richtigen VPC(10.0.0.0/16) aus
 und konfigurieren den privaten CIDR-Block(10.0.1.0/24).
 \begin{figure}[H]
@@ -281,12 +281,12 @@ und konfigurieren den privaten CIDR-Block(10.0.1.0/24).
 \end{figure}
 
 \subsection{Private Subnet}
-Beim Erstellen vom Public Subnet, gehen wir die selbe Schritte durch,
-doch ändern den CIDR-Block auf 10.0.2.0/24.
+Beim Erstellen vom Public Subnet, gehen wir die selbe Schritte durch, 
+ändern den CIDR-Block jedoch auf 10.0.2.0/24.
 
 \subsubsection{Enabling Auto-assign IP for Public Subnet}
 Wichtig zum Erwähnen ist die Aktivierung der Option "Enable auto-assign public IPv4 address". 
-Das sorgt dafür, dass jeder neuerstellten EC2 Instanz eine neue IP Adresse erstellt wird.
+Das sorgt dafür, dass jeder neu erstellten EC2 Instanz eine neue IP Adresse zugewiesen wird.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=\textwidth]{data/Edit_subnet_enable_ipv4.png}
@@ -298,7 +298,7 @@ Das sorgt dafür, dass jeder neuerstellten EC2 Instanz eine neue IP Adresse erst
 
 \section{Internet Access}
 \subsection{Enabling Internet Access for Public Subnet}
-Doch eine Subnet Public zu setzen reicht nicht, sie muss auch einen Internetzugriff bekommen.
+Weiters muss das Public Subnet noch Zugriff auf das Internet bekommen.
 Dafür verwenden wir Route-Tables, die wiederum Zugriff auf das Internet Gateway gewähren.
 
 \subsubsection{Internet Gateway}
@@ -312,8 +312,8 @@ Dem Gateway geben wir zusätzlich Tags, um später die Suche von diesem zu erlei
 	\label{fig:Internet Gateway}
 \end{figure}
 
-Das Gateway ist erstellt, aber ist keinem VPC zugewiesen. 
-Beim Gateway unter 'Actions -> Attach to VPC' fügen wir dies hinzu.
+Das Gateway ist erstellt, aber noch keinem VPC zugewiesen. 
+Beim Gateway unter 'Actions -> Attach to VPC' fügen wir diesen hinzu.
 
 \begin{figure}[h!]
 	\centering
@@ -334,7 +334,7 @@ In dem Tab "Route Tables" editieren wir den Table mit dem Namen "rtb-public-seme
 \end{figure}
 
 \subsection{Enabling Internet Access for Private Subnet}
-Das private Subnet hat keinen direkten Zugriff, sondern nutzt ein NAT Gateway vom Public Subnet.
+Das private Subnet hat keinen direkten Zugriff, sondern nutzt einen NAT Gateway vom Public Subnet.
 
 \subsubsection{NAT Gateway}
 \begin{figure}[h!]
@@ -437,7 +437,7 @@ Für das Projekt haben wir mehrere Security Groups erstellt.
 
 \section{Launch Instance}
 
-Die folgenden zwei Screenshots zeigen wie wir zwei Ubuntu-Instanzen für Primary und Secondary DNS erstellen können.
+Die folgenden Screenshots zeigen, wie wir zwei Ubuntu-Instanzen für Primary und Secondary DNS erstellen können.
 
 \begin{figure}[H]
 	\centering
@@ -467,22 +467,23 @@ Die folgenden zwei Screenshots zeigen wie wir zwei Ubuntu-Instanzen für Primary
 	\label{fig:Instanzecreation vom Secondary DNS2}
 \end{figure}
 
-\section{SSH Access zum Servers in Private Subnet}
-Weil die server in dem private Subnet keine public IPV4 Adresse haben können wir nicht auf sie direkt mit SSH zugreifen. 
-Wir können um das doch zu erreichen einen Umweg über den GitLab server nehmen, welcher sich im public subnet befindet und eine public IPV4 Adresse hat.
+\section{SSH Access zu Server im Private Subnet}
+Weil die Server in dem private Subnet keine public IPV4 Adresse haben, können wir nicht auf sie direkt mit SSH zugreifen. 
+Wir können um das doch zu erreichen einen Umweg über den GitLab Server nehmen, welcher sich im public Subnet befindet und eine public IPV4 Adresse hat.
 
 \subsection{Setting up SSH Agent Forwarding}
-Wir müssen zuerst den SSH Key den wir von AWS Academy bekommen haben hinzufügen.
+Wir müssen zuerst den SSH Key, den wir von AWS Academy bekommen haben hinzufügen.
 \begin{verbatim}
 		ssh-add. ~/.ssh/labsuser.pem
 \end{verbatim}
 
-Wir müssen nun SSH Agent Forwarding durch Änderung des files \~{} \textit{/.ssh/config} und durch den folgenden Command ermöglichen:
+Danach ermöglichen wir SSH Agent Forwarding durch Änderung des files \~{} \textit{/.ssh/config}:
 \begin{verbatim}
 		Host example.com 
 		ForwardAgent yes
 \end{verbatim}
-Nun müssen wir example.com mit der public IPV4 Adresse von GitLab ersetzen.
+Nun müssen wir example.com mit der public IPV4 Adresse von GitLab ersetzen. 
+Dies muss bei jedem Neustart des GitLab Servers wiederholt werden, weil sich die IP-Adresse bei jedem Start ändert.
 
 
 \subsection{SSH Zugriff}
@@ -490,8 +491,8 @@ Wir können jetzt SSH verwenden um den GitLab Server zu erreichen.
 \begin{verbatim}
 		ssh ubuntu@93.71.270.50
 \end{verbatim}
-Public IP vom EC2 GitLab Server und vom GitLab Server zu einem Private Subnet Server springen.
 
+Und auch um vom GitLab Server zu einem Private Subnet Server springen.
 \begin{verbatim}
 	ssh ubuntu@10.0.2.225(Private IP des DNS-Primary EC2 Servers)
 \end{verbatim}
@@ -508,19 +509,19 @@ Um das zu erreichen führen wir die folgenden Commands aus.
 
 
 \section{Setup der DNS Server}
-Nun konfigurieren wir die beiden DNS Server
-
+Nun konfigurieren wir die beiden DNS Server.
 \subsection{Installation von BIND9}
-Nachdem wir sichergegangen sind, dass das Betriebssystem auf dem neuesten Stand ist installieren wir BIND9. Eine Software Package mit welchem namens resolution machen können. Das erreichen wir mit dem folgenden command:
+Nachdem wir sichergegangen sind, dass das Betriebssystem auf dem neuesten Stand ist installieren wir BIND9. 
+Eine Software Package mit welchem namens resolution machen können. Das erreichen wir mit dem folgenden command:
 \begin{verbatim}
 		sudo apt install bind9 bind9utils bind9-doc
 \end{verbatim}
 
-Wir setzen nun BIND in den IPV4 Modus. Das erreichen wir indem wir das file \textit{/etc/default/named ändern} und -4 am Ende vom OPTIONS Parameter hinzufügen.
+Wir setzen nun BIND in den IPV4 Modus. Das erreichen wir indem wir das file \textit{/etc/default/named} ändern und -4 am Ende vom OPTIONS Parameter hinzufügen.
 \begin{verbatim}
 		OPTIONS=“-u bind -4”
 \end{verbatim}
-nun starten wir BIND9 neu
+Zuletzt starten wir BIND9 neu.
 \begin{verbatim}
 		sudo systemctl restart bind9
 \end{verbatim}
@@ -528,17 +529,18 @@ nun starten wir BIND9 neu
 
 
 \subsection{Konfiguration des Primary DNS Servers}
-Zunächst konfigurieren wir den primary DNS Server, welcher auf der EC2 Instanz läuft.
+Zunächst konfigurieren wir den Primary DNS Server, welcher auf der EC2 Instanz läuft.
 
 \subsubsection{Erstellung der Access Contol List}
-Zuerst müssen wir eine ACL(Access Contol List) für den primary DNS Server erstellen. Dadurch können wir kontrollieren wer Zugriff auf den name server hat.
-Die ACL kann in named.conf.options geändert werden:
+Zuerst müssen wir eine ACL(Access Contol List) für den Primary DNS Server erstellen. Dadurch können wir kontrollieren, wer Zugriff auf den Name Server hat.
+Die ACL kann in \textit{named.conf.options} geändert werden:
 \begin{verbatim}
 		sudo nano /etc/bind/named.conf.options
 \end{verbatim}
 
 
-Über dem Options-Block erstellen wir eine neue Access Control List namens trusted. In dieser benennen wir alle Clients denen wir Zugriff auf den Name Server geben wollen.
+Über dem Options-Block erstellen wir eine neue Access Control List namens trusted.
+In dieser benennen wir alle Clients denen wir Zugriff auf den Name Server geben wollen.
 \begin{verbatim}
 		acl "trusted" {
 						10.0.2.184
@@ -550,7 +552,7 @@ Die ACL kann in named.conf.options geändert werden:
 
 
 \subsubsection{Konfiguration der Allgemeine Optionen}
-Nun editieren wir den options block in dem named.conf.options file um generelle Einstellungen festzulegen.
+Nun editieren wir den Options Block in dem textit{named.conf.options} File um generelle Einstellungen festzulegen.
 \begin{verbatim}
 options {
 		directory "/var/cache/bind";
@@ -565,7 +567,7 @@ options {
 		...
 };
 \end{verbatim}
-Wenn der DNS Server eine Anfrage bekommt welche er nicht selbst beantworten kann schickt er diese an den unter forwarders definierten Name Server.
+Wenn der DNS Server eine Anfrage bekommt, welche er nicht selbst beantworten kann, schickt er diese an den unter textit{forwarders} definierten Name Server.
 
 
 \subsubsection{Konfiguration des “Local” Files}
@@ -582,9 +584,9 @@ In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich f
 		allow-transfer { 10.0.2.225; };
 		};
 \end{verbatim}
-\textit{type primary} → definiert diesen Server als den primary name Server für die Zone. \\
-\textit{File} → Pfad zum zone file \\
-\textit{allow-transger} → IP Adressen des sekundären Servers welchem es erlaubt ist von diesem Server zu transferieren. \\
+\textit{type primary} → definiert diesen Server als den Primary Name Server für die Zone. \\
+\textit{File} → Pfad zum Zone File \\
+\textit{allow-transger} → IP Adressen des sekundären Servers welchem es erlaubt ist, von diesem Server zu transferieren. \\
 
 
 \subsubsection{Hinzufügen der Reverse Zone für das Public Subnet}
@@ -595,7 +597,7 @@ In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich f
 					allow-transfer { 10.0.2.225; }; # ns2 private IP address - secondary
 		};
 \end{verbatim}
-Um reverse lookups zu erlauben müssen wir die reverse Zone so konfigurieren, dass wir in der Range unseres Public Subnets sind.
+Um Reverse Lookups zu erlauben, müssen wir die Reverse Zone so konfigurieren, dass wir in der Range unseres Public Subnets sind.
 
 
 \subsubsection{Hinzufügen der Reverse Zone für das Private Subnet}
@@ -606,12 +608,12 @@ Um reverse lookups zu erlauben müssen wir die reverse Zone so konfigurieren, da
 					allow-transfer { 10.0.2.225; }; # ns2 private IP address - secondary
 					};
 \end{verbatim}
-Hier machen wir das selbe wie oben für das Private Subnet.
+Dasselbe machen wir für das Private Subnet.
 
 \subsubsection{Erstellen des Forward Zone Files}
-Die Forward-Nonendatei ist der Ort, an dem wir DNS-Einträge für Forward-DNS-Abfragen definieren. 
-Das bedeutet, wenn der DNS eine Namesabfrage erhält, wird er in der Forward-Zonendatei nachschauen, um die entsprechende private IP-Adresse von host1 zu ermitteln.
-Zuerst müssen wir das Directory erstellen. Hier werden wir auch die forward zone files einfügen:
+Die Forward-Zone Datei ist der Ort, an dem wir DNS-Einträge für Forward-DNS-Abfragen definieren. 
+Das bedeutet, wenn der DNS eine Namesabfrage erhält, wird er in der Forward-Zonen Datei nachschauen, um die entsprechende private IP-Adresse von host1 zu ermitteln.
+Zuerst müssen wir das Directory erstellen. Hier werden wir auch die Forward Zone Files einfügen:
 \begin{verbatim}
 		sudo mkdir /etc/bind/zones
 \end{verbatim}
@@ -648,8 +650,8 @@ Jetzt erstellen wir das zone file:
 
 
 \subsubsection{Erstellen des Reverese Zone Files für das Public Subnet}
-Reverse-Zonendateien sind der Ort, an dem wir DNS PTR-Einträge für Reverse-DNS-Abfragen definieren. 
-Das bedeutet, wenn der DNS eine Abfrage nach einer IP-Adresse erhält, z. B. 10.0.1.77, wird er in der Reverse-Zonendatei(en) nachschauen, um den entsprechenden FQDN zu ermitteln, z. B. gitlab.semesterDevOps.com in diesem Fall.
+Reverse-Zonen Dateien sind der Ort, an dem wir DNS PTR-Einträge für Reverse-DNS-Abfragen definieren. 
+Das bedeutet, wenn der DNS eine Abfrage nach einer IP-Adresse erhält, z. B. 10.0.1.77, wird er in der Reverse-Zonen Datei nachschauen, um den entsprechenden FQDN zu ermitteln, z.B. gitlab.semesterDevOps.com in diesem Fall.
 Lassen Sie uns die Zonendatei erstellen:
 
 \begin{verbatim}
@@ -681,26 +683,26 @@ Lassen Sie uns die Zonendatei erstellen:
 
 \item IN SOA: Der Teil „IN“ steht für Internet. SOA ist der Hinweis darauf, dass dies ein Start of Authority-Eintrag ist.
 
-\item ns1.semesterDevOps.com.: Definiert den primären Nameserver für diese Domain.
+\item ns1.semesterDevOps.com.: Definiert den primären Name Server für diese Domain.
 
 \item admin.semesterDevOps.com.: E-Mail-Adresse des Administrators für diese Zone. Das „@“ wird in der E-Mail-Adresse durch einen Punkt ersetzt.
 
-\item Serial: Seriennummer für die Zonendatei. Jedes Mal, wenn die Zonendatei bearbeitet wird, muss diese Nummer inkrementiert werden, damit die Zonendatei korrekt propagiert wird.
+\item Serial: Seriennummer für die Zone Datei. Jedes Mal, wenn die Zone Datei bearbeitet wird, muss diese Nummer inkrementiert werden, damit die Zonendatei korrekt propagiert wird.
 Sekundäre Server prüfen, ob die Seriennummer der Zone auf dem primären Server größer ist als die, die sie auf ihrem System haben. Ist dies der Fall, fordert der sekundäre Server die neue Zonendatei an; wenn nicht, wird weiterhin die ursprüngliche Datei bereitgestellt.
 
 \item Refresh: Aktualisierungsintervall für die Zone. Dies ist der Zeitraum, den der sekundäre Server wartet, bevor er den primären Server auf Änderungen der Zonendatei abfragt.
 
 \item Retry: Wiederholungsintervall für diese Zone. Wenn der sekundäre Server nach Ablauf des Aktualisierungsintervalls keine Verbindung zum primären Server herstellen kann, wartet er diesen Zeitraum und versucht dann erneut, den primären Server abzufragen.
 
-\item Expire: Ablaufzeitraum. Wenn ein sekundärer Nameserver den primären Server für diesen Zeitraum nicht kontaktieren konnte, gibt er keine Antworten mehr als autoritative Quelle für diese Zone zurück.
+\item Expire: Ablaufzeitraum. Wenn ein sekundärer Name Server den primären Server für diesen Zeitraum nicht kontaktieren konnte, gibt er keine Antworten mehr als autoritative Quelle für diese Zone zurück.
 
-\item Negative Cache TTL: Zeitraum, für den der Nameserver einen Namensfehler zwischenspeichert, wenn der angeforderte Name in dieser Datei nicht gefunden werden kann.
+\item Negative Cache TTL: Zeitraum, für den der Name Server einen Namensfehler zwischenspeichert, wenn der angeforderte Name in dieser Datei nicht gefunden werden kann.
 \end{itemize}
 
 \newpage
 
 \subsubsection{Erstellen des Reverse Zone Files für das Private Subnet}
-Nun das selbe für das private subnet
+Nun das selbe für das Private Subnet.
 
 \begin{verbatim}
 sudo nano /etc/bind/zones/db.10.0.2
@@ -734,12 +736,12 @@ Wir können die Syntax aller named.conf* Files mit dem folgenden Command überpr
 \begin{verbatim}
 		sudo named-checkconf
 \end{verbatim}
-um die Zone Files zu überprüfen helfen uns diese beiden:
+Um die Zone Files zu überprüfen helfen uns diese Commands:
 \begin{verbatim}
 		sudo named-checkzone 1.0.10.in-addr.arpa /etc/bind/zones/db.10.0.1
 		sudo named-checkzone 2.0.10.in-addr.arpa /etc/bind/zones/db.10.0.2
 \end{verbatim}
-sobald die Syntax überprüft wurde starten wir BIND9 restarten damit die änderungen angenommen werden:
+Sobald die Syntax überprüft wurde, müssen wir BIND9 neustarten, damit die Änderungen übernommen werden:
 \begin{verbatim}
 		sudo systemctl restart bind9
 \end{verbatim}
@@ -842,7 +844,7 @@ docker compose exec -it gitlab cat /etc/gitlab/initial_root_password
 
 
 \section{GitLab Runner}
-Als Nächstes installieren wir GitLab Runner auf der GitLab-Runner-EC2-Instanz.  
+Als nächstes installieren wir GitLab Runner auf der GitLab-Runner-EC2-Instanz.  
 Wie zuvor verbinden wir uns per SSH mit der Maschine, aktualisieren alle Systempakete, starten die Maschine neu und installieren anschließend Docker gemäß der offiziellen Dokumentation.
 
 \begin{verbatim}
@@ -850,7 +852,7 @@ Wie zuvor verbinden wir uns per SSH mit der Maschine, aktualisieren alle Systemp
 \end{verbatim}
 
 \subsection{Installation des GitLab Runners mit Docker}
-Zuerst laden wir das neueste Docker-Image herunter, indem wir folgenden Befehl ausführen.  
+Zuerst laden wir das neueste Docker-Image herunter.  
 Anschließend erstellen wir ein neues Docker-Volume, um die Konfiguration auch bei Neustarts des Containers zu behalten.
 
 \begin{verbatim}
