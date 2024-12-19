@@ -746,17 +746,187 @@ Sobald die Syntax überprüft wurde, müssen wir BIND9 neustarten, damit die Än
 		sudo systemctl restart bind9
 \end{verbatim}
 
-\subsection{Configuring the Secondary DNS Server}
+\section{Konfiguration des sekundären DNS-Servers}  
+Der sekundäre DNS-Server wird alle Einträge des primären DNS-Servers spiegeln 
+und alle Anfragen beantworten, wenn der primäre DNS-Server nicht verfügbar ist.  
+
+\subsection{Einrichten der Zugriffskontrollliste und allgemeiner Optionen}  
+
+Sowie der erste DNS, brauch der Zweite ebenfalls eine Access control list.
+\begin{verbatim}
+	acl "trusted" {
+		10.0.2.225
+		10.0.2.10
+		10.0.1.246
+		10.0.2.184
+	};
+
+	options {
+			directory "/var/cache/bind";
+			recursion yes; # enables recursive queries
+			allow-recursion { trusted; }; # allows recursive queries from "trusted" clients
+			listen-on { 10.0.0.0/16; }; # VPC CIDR - listen on private network only
+			allow-transfer { none; }; # disable zone transfers by default
+			forwarders {
+				8.8.8.8;
+				8.8.4.4;
+			};
+			...
+	};
+\end{verbatim}
+
+
+\subsection{Konfigurieren vom Local File}
+Die Local Files vom zweiten DNS wird genau so konfiguriert wie vom Ersten. 
+Es gibt nur kleine Unterschiede wie die "type": 
+
+
+\begin{verbatim}
+	zone "semesterDevOps.com" {
+			type secondary;
+			file "/etc/bind/zones/db.semesterDevOps.com"; 
+			allow-transfer { 10.0.2.225; };
+	};
+\end{verbatim}
+
+
+\begin{verbatim}
+	zone "1.0.10.in-addr.arpa" {
+			type secondary;
+			file "/etc/bind/zones/db.10.0.1"; # 10.0.1.0/24 Subnet
+			allow-transfer { 10.0.2.225; }; # ns2 private IP address - secondary
+	};
+\end{verbatim}
+
+
+\begin{verbatim}
+	zone "2.0.10.in-addr.arpa" {
+			type secondary;
+			file "/etc/bind/zones/db.10.0.2"; # 10.0.2.0/24 Subnet
+			allow-transfer { 10.0.2.225; }; # ns2 private IP address - secondary
+	};
+\end{verbatim}
+
+Zum Überprüfen der Configation verwenden wir:
+\begin{verbatim}
+	sudo named-checkconf
+\end{verbatim}
+
+Wenn alles funkioniert, dann starten wir BIND9 erneut:
+\begin{verbatim}
+	sudo systemctl restart bind9
+\end{verbatim}
+
+
+
+\section{Konfiguration der Server}
+
+Unten dargestellt ist die Konfiguration des DNS-Servers auf dem Public-GitLab-Server. 
+Es ist jedoch wichtig zu beachten, dass diese Konfiguration auf allen Servern in der Infrastruktur umgesetzt werden muss. 
+Zuerst müssen wir herausfinden, welches Gerät mit unserem privaten Netzwerk verbunden ist:
+
+\begin{verbatim}
+	ip address show to 10.0.0.0/16
+\end{verbatim}
+
+
+\subsection{Festlegen der Nameserver}  
+In Ubuntu werden alle DNS-Dienste über \texttt{systemd} verwaltet. Der für DNS verantwortliche Dienst heißt \texttt{systemd-resolved} und enthält das Dienstprogramm \texttt{resolvectl}, mit dem einige DNS-Konfigurationen vorgenommen werden können.  
+
+Um die Nameserver für DNS-Abfragen auf unsere eigenen DNS-Nameserver festzulegen, können wir den folgenden Befehl verwenden:  
+
+\begin{verbatim}
+resolvectl dns <Interface> 10.0.2.225 10.0.2.10
+\end{verbatim}  
+
+Hierbei steht \texttt{<Interface>} für die Netzwerkschnittstelle, zum Beispiel \texttt{eth0}.  
+Die IP-Adresse \texttt{10.0.2.225} gehört zum primären DNS-Server, und \texttt{10.0.2.10} ist die IP-Adresse des sekundären DNS-Servers. 
 
 
 
 
 
 
+\subsection{Änderungen dauerhaft speichern}
+Jedoch speichert dieser Command die Änderungen der Einstellungen nicht persistent. Sie würden zum Beispiel nach einem Reboot verloren gehen. 
+Um die Änderungen permanent zu machen müssen wir ein paar config-Files ändern: \newline
+
+\begin{verbatim}
+	sudo nano /etc/systemd/resolved.conf
+\end{verbatim}
+
+Spezifisch das File \textit{etc/systemd/resolved.conf} möchten wir ändern.
+Zunächst müssen wir die folgende Zeile anpassen:
 
 
+\begin{verbatim}
+	[Resolve]
+	DNS=10.0.2.225 10.0.2.10
+\end{verbatim}
+
+Wieder müssen hier IP Adressen des Primary und Secondary DNS angegeben werden.
+Damit die Änderungen eintreten müssen wir den \textit{systemd-resolved service} restarten:
+
+\begin{verbatim}
+	sudo systemctl restart systemd-resolved
+\end{verbatim}
+
+Gehe sicher, dass \textit{/etc/resolv.conf} mit dem Stub-Resolver von \textit{systemd-resolved} verknüpft ist:
+
+\begin{verbatim}
+	sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+\end{verbatim}
+
+Mit dem Folgenden Command kann nun auch überprüft werden, ob das System nun wirklich unseren DNS Server verwendet:
+
+\begin{verbatim}
+	sudo resolvectl status
+\end{verbatim}
+
+\subsection{Testen der Nameserver}
+Wir können überprüfen, ob unsere Nameserver funktionieren, indem wir einige Abfragen durchführen. Wir beginnen mit DNS-Forward-Lookups:
+
+\begin{verbatim}
+	nslookup gitlab.semesterDevOps.com
+\end{verbatim}
+
+Sobald wir bestätigt haben, dass diese ordnungsgemäß funktionieren, führen wir auch DNS-Reverse-Lookups durch:
 
 
+\begin{verbatim}
+	nslookup glrunner.semesterDevOps.com
+\end{verbatim}
+
+
+Alternativ können wir auch den Befehl dig verwenden, um detailliertere Ausgaben zu erhalten:
+
+\begin{verbatim}
+	nslookup 10.0.1.246
+\end{verbatim}
+
+\begin{verbatim}
+	nslookup 10.0.2.184
+\end{verbatim}
+
+
+\subsection{Überprüfen, ob der sekundäre DNS-Server wie vorgesehen funktioniert}  
+Es gibt mehrere Möglichkeiten, um zu testen, ob der sekundäre DNS-Server wie vorgesehen arbeitet:  
+
+\begin{enumerate}  
+    \item \textbf{Direkte Abfrage des sekundären DNS-Servers mit \texttt{dig}}  
+    \begin{verbatim}
+    dig @10.0.2.10 gitlab.semester.DevOps.com
+    \end{verbatim}  
+
+    \item \textbf{DNS-Primary-Instanz stoppen und Abfragen testen}  
+    Stoppen Sie die EC2-Instanz \texttt{DNS-Primary} und überprüfen Sie, ob DNS-Abfragen mithilfe von \texttt{nslookup} oder \texttt{dig} beantwortet werden können.  
+
+    \item \textbf{Lokalen DNS-Cache auf dem Client deaktivieren}  
+    Bearbeiten Sie dazu die Datei \texttt{/etc/systemd/resolved.conf} und fügen Sie die folgende Zeile hinzu:  
+    \begin{verbatim}
+    Cache=no
+    \end{verbatim}  
+\end{enumerate} 
 
 
 
