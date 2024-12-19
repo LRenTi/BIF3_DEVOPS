@@ -36,10 +36,11 @@
 	\begin{tabular}{|l|l|l|l|}
 		\hline
 		\textbf{Dienst} & \textbf{Subnetztyp}  & \textbf{IP-Adresse} & \textbf{FQDN}      \\ \hline
-		Primärer DNS    & Privates Subnetz     & 10.0.1.10           & dns1.semester.at   \\ \hline
-		Sekundärer DNS  & Privates Subnetz     & 10.0.1.11           & dns2.semester.at   \\ \hline
-		GitLab Server   & Öffentliches Subnetz & 10.0.0.10           & gitlab.semester.at \\ \hline
-		LDAP Server     & Privates Subnetz     & 10.0.2.10           & ldap.semester.at   \\ \hline
+		Primärer DNS    & Privates Subnetz     & 10.0.2.225          & ns1.semester.devops.com   \\ \hline
+		Sekundärer DNS  & Privates Subnetz     & 10.0.2.10           & ns2.semester.devops.com   \\ \hline
+		GitLab Server   & Öffentliches Subnetz & Public              & gitlab.semester.devops.com \\ \hline
+		LDAP Server     & Privates Subnetz     & 10.0.2.10           & ldap.semester.devops.com   \\ \hline
+		GitLab-Runner	& Privates Subnetz	   & 10.0.2.184			 & gitlab.semester.devops.com \\ \hline
 	\end{tabular}
 	\caption{Netzwerkdienste und IP-Zuordnung}
 \end{table}
@@ -272,7 +273,6 @@ und konfigurieren die private CIDR-Block(10.0.2.0/24).
 \subsection{Public Subnet}
 Beim Erstellen vom Public Subnet, gehen wir die selbe Schritte durch,
 doch ändern den CIDR-Block auf 10.0.1.0/24.
-
 ---SCREENSHOT---
 
 
@@ -456,12 +456,12 @@ Nun müssen wir example.com mit der public IPV4 Adresse von GitLab ersetzen.
 \section{SSH Zugriff}
 Wir können jetzt SSH verwenden um den GitLab Server zu erreichen.
 \begin{verbatim}
-		ssh ubuntu@98.81.217.50 ----IP ÜBERPRÜFEN
+		ssh ubuntu@93.71.270.50
 \end{verbatim}
 Public IP vom EC2 GitLab Server und vom GitLab Server zu einem Private Subnet Server springen.
 
 \begin{verbatim}
-	ssh ubuntu@10.0.2.252(Private IP des DNS-Primary EC2 Servers)  -ÄNDER AUF RICHTIG
+	ssh ubuntu@10.0.2.225(Private IP des DNS-Primary EC2 Servers)
 \end{verbatim}
 
 
@@ -510,11 +510,10 @@ Die ACL kann in named.conf.options geändert werden:
 Über dem Options-Block erstellen wir eine neue Access Control List namens trusted. In dieser benennen wir alle Clients denen wir Zugriff auf den Name Server geben wollen.
 \begin{verbatim}
 		acl "trusted" {
-						10.0.2.252;   --ÄNDERN AUF RICHTIGE
-						10.0.2.217;
-						10.0.1.77;
-						10.0.2.148;
-						10.0.2.146;
+						10.0.2.184
+						10.0.2.225
+						10.0.1.246
+						10.0.2.10
 		};
 \end{verbatim}
 
@@ -544,13 +543,12 @@ In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich f
 		sudo nano /etc/bind/named.conf.local
 \end{verbatim}
 
-
 \subsection{Adding the forward zone}
 \begin{verbatim}
-		zone "ilovedevops.com" {
+		zone "semesterDevOps.com" {
 		type primary;
-		file "/etc/bind/zones/db.ilovedevops.com"; 
-		allow-transfer { 10.0.2.217; }; 
+		file "/etc/bind/zones/db.semesterDevOps.com"; 
+		allow-transfer { 10.0.2.225; };
 		};
 \end{verbatim}
 \textit{type primary} → definiert diesen Server als den primary name Server für die Zone.
@@ -563,7 +561,7 @@ In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich f
 		zone "1.0.10.in-addr.arpa" {
 					type primary;
 					file "/etc/bind/zones/db.10.0.1"; # 10.0.1.0/24 Subnet
-					allow-transfer { 10.0.2.217; }; # ns2 private IP address - secondary
+					allow-transfer { 10.0.2.225; }; # ns2 private IP address - secondary
 		};
 \end{verbatim}
 Um reverse lookups zu erlauben müssen wir die reverse Zone so konfigurieren, dass wir in der Range unseres Public Subnets sind.
@@ -576,7 +574,7 @@ Um reverse lookups zu erlauben müssen wir die reverse Zone so konfigurieren, da
 		zone "2.0.10.in-addr.arpa" {
 					type primary;
 					file "/etc/bind/zones/db.10.0.2"; # 10.0.2.0/24 Subnet
-					allow-transfer { 10.0.2.217; }; # ns2 private IP address - secondary
+					allow-transfer { 10.0.2.225; }; # ns2 private IP address - secondary
 					};
 \end{verbatim}
 Hier machen wir das selbe wie oben für das Private Subnet.
@@ -590,7 +588,7 @@ Zuerst müssen wir das Directory kreieren. Hier werden wir auch die forward zone
 \end{verbatim}
 Jetzt kreieren wir das zone file:
 \begin{verbatim}
-		sudo nano /etc/bind/zones/db.ilovedevops.com
+		sudo nano /etc/bind/zones/db.semesterDevOps.com
 \end{verbatim}
 
 \begin{verbatim}
@@ -598,7 +596,7 @@ Jetzt kreieren wir das zone file:
 		; BIND data file for local loopback interface
 		;
 		$TTL 604800
-		@ IN SOA ns1.ilovedevops.com. admin.ilovedevops.com. (
+		@ IN SOA ns1.semesterDevOps.com. admin.semesterDevOps.com. (
 						3 ; Serial
 						604800 ; Refresh
 						86400 ; Retry
@@ -607,23 +605,22 @@ Jetzt kreieren wir das zone file:
 		;
 
 		; name servers - NS records
-				IN	NS 	ns1.ilovedevops.com.
-				IN 	NS 	ns2.ilovedevops.com.
+				IN	NS 	ns1.semesterDevOps.com.
+				IN 	NS 	ns2.semesterDevOps.com.
 
 		; name servers - A records
-		ns1.ilovedevops.com. 	IN	A		10.0.2.252     -ÄNDERN AUF RICHTIG
-		ns2.ilovedevops.com. 	IN	A		10.0.2.217
+		ns1.semesterDevOps.com. 	IN	A		10.0.2.225
+		ns2.semesterDevOps.com. 	IN	A		10.0.2.10
 
 		; 10.0.0.0/16 - A records
-		gitlab.ilovedevops.com. IN 	A 	10.0.1.77
-		glrunner.ilovedevops.com. 	IN 	A 	10.0.2.148
-		ldap.ilovedevops.com. 	IN	 A 	10.0.2.146
+		gitlab.semesterDevOps.com. IN 	A 	10.0.1.246
+		glrunner.semesterDevOps.com. 	IN 	A 	10.0.2.184
 \end{verbatim}
 
 
 \subsection{Kreieren des Reverese Zone Files für das Public Subnet}
 Reverse-Zonendateien sind der Ort, an dem wir DNS PTR-Einträge für Reverse-DNS-Abfragen definieren. 
-Das bedeutet, wenn der DNS eine Abfrage nach einer IP-Adresse erhält, z. B. 10.0.1.77, wird er in der Reverse-Zonendatei(en) nachschauen, um den entsprechenden FQDN zu ermitteln, z. B. gitlab.ilovedevops.com in diesem Fall.
+Das bedeutet, wenn der DNS eine Abfrage nach einer IP-Adresse erhält, z. B. 10.0.1.77, wird er in der Reverse-Zonendatei(en) nachschauen, um den entsprechenden FQDN zu ermitteln, z. B. gitlab.semesterDevOps.com in diesem Fall.
 Lassen Sie uns die Zonendatei erstellen:
 
 \begin{verbatim}
@@ -634,7 +631,7 @@ Lassen Sie uns die Zonendatei erstellen:
 		; BIND reverse data file for 10.0.1.0/24
 		;
 		$TTL 604800
-		@ IN SOA ns1.ilovedevops.com. admin.ilovedevops.com. (
+		@ IN SOA ns1.semesterDevOps.com. admin.semesterDevOps.com. (
 				2024011201 ; Serial (YYYYMMDDnn)
 				604800 ; Refresh
 				86400 ; Retry
@@ -643,21 +640,21 @@ Lassen Sie uns die Zonendatei erstellen:
 		) ; Negative Cache TTL
 		;
 		; Name servers - NS records
-		IN NS ns1.ilovedevops.com.
-		IN NS ns2.ilovedevops.com.
+		IN NS ns1.semesterDevOps.com.
+		IN NS ns2.semesterDevOps.com.
 		; PTR Records
-		77 IN PTR gitlab.ilovedevops.com. ; 10.0.1.77
+		77 IN PTR gitlab.semesterDevOps.com. ; 10.0.1.246
 \end{verbatim}
 
 \begin{itemize}
-	\item ilovedevops.com. oder @ : Wurzel der Zone. Dies gibt an, dass die Zonendatei für die Domain ilovedevops.com bestimmt ist.
+	\item semesterDevOps.com. oder @ : Wurzel der Zone. Dies gibt an, dass die Zonendatei für die Domain semesterDevOps.com bestimmt ist.
 @ ist nur ein Platzhalter, der den Inhalt der \${}ORIGIN-Variable ersetzt.
 
 \item IN SOA: Der Teil „IN“ steht für Internet. SOA ist der Hinweis darauf, dass dies ein Start of Authority-Eintrag ist.
 
-\item ns1.ilovedevops.com.: Definiert den primären Nameserver für diese Domain.
+\item ns1.semesterDevOps.com.: Definiert den primären Nameserver für diese Domain.
 
-\item admin.ilovedevops.com.: E-Mail-Adresse des Administrators für diese Zone. Das „@“ wird in der E-Mail-Adresse durch einen Punkt ersetzt.
+\item admin.semesterDevOps.com.: E-Mail-Adresse des Administrators für diese Zone. Das „@“ wird in der E-Mail-Adresse durch einen Punkt ersetzt.
 
 \item Serial: Seriennummer für die Zonendatei. Jedes Mal, wenn die Zonendatei bearbeitet wird, muss diese Nummer inkrementiert werden, damit die Zonendatei korrekt propagiert wird.
 Sekundäre Server prüfen, ob die Seriennummer der Zone auf dem primären Server größer ist als die, die sie auf ihrem System haben. Ist dies der Fall, fordert der sekundäre Server die neue Zonendatei an; wenn nicht, wird weiterhin die ursprüngliche Datei bereitgestellt.
@@ -683,7 +680,7 @@ sudo nano /etc/bind/zones/db.10.0.2
 		; BIND reverse data file for 10.0.2.0/24
 		;
 		$TTL 604800
-		@ IN SOA ilovedevops.com. admin.ilovedevops.com. (
+		@ IN SOA semesterDevOps.com. admin.semesterDevOps.com. (
 				1 ; Serial 
 				604800 ; Refresh
 				86400 ; Retry
@@ -692,13 +689,12 @@ sudo nano /etc/bind/zones/db.10.0.2
 		) ; Negative Cache TTL
 		;
 		; Name servers - NS records
-		IN NS ns1.ilovedevops.com.
-		IN NS ns2.ilovedevops.com.
+		IN NS ns1.semesterDevOps.com.
+		IN NS ns2.semesterDevOps.com.
 		; PTR Records
-		252 IN PTR ns1.ilovedevops.com. ; 10.0.2.252			--ÄNDERN AUF RICHTIG
-		217 IN PTR ns2.ilovedevops.com. ; 10.0.2.217
-		148 IN PTR glrunner.ilovedevops.com. ; 10.0.2.148
-		146 IN PTR ldap.ilovedevops.com. ; 10.0.2.146
+		252 IN PTR ns1.semesterDevOps.com. ; 10.0.2.225
+		217 IN PTR ns2.semesterDevOps.com. ; 10.0.2.10
+		148 IN PTR glrunner.semesterDevOps.com. ; 10.0.2.184
 \end{verbatim}
 
 \section{Checking the BIND Configuration Syntax}
@@ -734,10 +730,6 @@ sobald die Syntax über prüft wurde starten wir BIND9 restarten damit die ände
 
 
 
-
-
-
-
 \section{GitLab}
 
 \subsection{Wechsel zum öffentlichen GitLab-Server}
@@ -750,18 +742,18 @@ Diese Konfiguration wurde gewählt, da das Klonen eines Repositories eine häufi
 
 Die Änderung wird in der Datei \texttt{/etc/ssh/sshd\_config} vorgenommen:
 
-\begin{lstlisting}[language=bash]
+\begin{verbatim}
 Port 2424
-\end{lstlisting}
+\end{verbatim}
 
 Laut Dokumentation genügt ein Neustart des SSH-Dienstes, um die Änderungen zu übernehmen. In unserem Fall war jedoch ein Neustart des Servers erforderlich.
 
 \subsection{Anpassen der Sicherheitsgruppe auf AWS}
 Damit eine Verbindung über den Port \texttt{2424} möglich ist, muss dieser Port in der Sicherheitsgruppe \texttt{PublicGitLabSecurityGroup} freigegeben werden. Beachten Sie, dass bei jedem SSH-Zugriff auf die GitLab-Instanz der alternative Port angegeben werden muss:
 
-\begin{lstlisting}[language=bash]
+\begin{verbatim}
 ssh ubuntu@54.221.15.220 -p 2424
-\end{lstlisting}
+\end{verbatim}
 
 \subsection{Installation von GitLab CE mit Docker Compose}
 
@@ -770,16 +762,16 @@ Im Anschluss wird Docker gemäß der offiziellen Dokumentation installiert. Nach
 \subsubsection{Erstellen von Verzeichnissen zur Datenpersistenz}
 Gemäß der Dokumentation erstellen wir ein Verzeichnis für Konfigurations-, Log- und Daten-Dateien:
 
-\begin{lstlisting}[language=bash]
+\begin{verbatim}
 sudo mkdir -p /srv/gitlab
 sudo chown -R ubuntu:ubuntu /srv/gitlab
 export GITLAB_HOME=/srv/gitlab
-\end{lstlisting}
+\end{verbatim}
 
 \subsubsection{Erstellen des Containers mit Docker Compose}
 Wir verwenden Docker Compose, um GitLab zu installieren. Dazu erstellen wir eine Datei \texttt{docker-compose.yml} mit folgendem Inhalt:
 
-\begin{lstlisting}
+\begin{verbatim}
 services:
   gitlab:
     image: gitlab/gitlab-ce:latest
@@ -798,22 +790,21 @@ services:
       - '$GITLAB_HOME/logs:/var/log/gitlab'
       - '$GITLAB_HOME/data:/var/opt/gitlab'
     shm_size: '256m'
-\end{lstlisting}
+\end{verbatim}
 
 Die \texttt{external\_url} muss mit der öffentlichen IPv4-Adresse der GitLab-EC2-Instanz aktualisiert werden. Da die IP-Adresse nach jedem Neustart wechselt, ist eine Anpassung der Datei \texttt{docker-compose.yml} nach jedem Neustart notwendig.
 
 Zum Starten des Containers führen wir folgenden Befehl aus:
 
-\begin{lstlisting}[language=bash]
+\begin{verbatim}
 docker compose up -d
-\end{lstlisting}
+\end{verbatim}
 
 GitLab ist nach kurzer Zeit unter \texttt{http://54.89.164.241} erreichbar. Der Standard-Benutzername lautet \texttt{root}, das Passwort kann mit folgendem Befehl abgerufen werden:
 
-\begin{lstlisting}[language=bash]
+\begin{verbatim}
 docker compose exec -it gitlab cat /etc/gitlab/initial_root_password
-\end{lstlisting}
-
+\end{verbatim}
 
 
 \newpage
