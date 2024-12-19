@@ -439,7 +439,7 @@ Die folgenden zwei Screenshots zeigen wie wir zwei Ubuntu-Instanzen für Primary
 Weil die server in dem private Subnet keine public IPV4 Adresse haben können wir nicht auf sie direkt mit SSH zugreifen. 
 Wir können um das doch zu erreichen einen Umweg über den GitLab server nehmen, welcher sich im public subnet befindet und eine public IPV4 Adresse hat.
 
-\section{Setting up SSH Agent Forwarding}
+\subsection{Setting up SSH Agent Forwarding}
 Wir müssen zuerst den SSH Key den wir von AWS Academy bekommen haben hinzufügen.
 \begin{verbatim}
 		ssh-add. ~/.ssh/labsuser.pem
@@ -453,7 +453,7 @@ Wir müssen nun SSH Agent Forwarding durch Änderung des files \~{} \textit{/.ss
 Nun müssen wir example.com mit der public IPV4 Adresse von GitLab ersetzen.
 
 
-\section{SSH Zugriff}
+\subsection{SSH Zugriff}
 Wir können jetzt SSH verwenden um den GitLab Server zu erreichen.
 \begin{verbatim}
 		ssh ubuntu@93.71.270.50
@@ -465,7 +465,7 @@ Public IP vom EC2 GitLab Server und vom GitLab Server zu einem Private Subnet Se
 \end{verbatim}
 
 
-\section{Aktualisieren des Betriebssystems}
+\subsection{Aktualisieren des Betriebssystems}
 
 Sobald wir auf dem primary DNS Server sind müssen wir zuerst sicherstellen, dass das Betriebssystem auf dem neusesten Stand ist.
 Um das zu erreichen führen wir die folgenden Commands aus.
@@ -478,8 +478,7 @@ Um das zu erreichen führen wir die folgenden Commands aus.
 \section{Setup der DNS Server}
 Nun konfigurieren wir die beiden DNS Server
 
-
-\section{Installation von BIND9}
+\subsection{Installation von BIND9}
 Nachdem wir sichergegangen sind, dass das Betriebssystem auf dem neuesten Stand ist installieren wir BIND9. Eine Software Package mit welchem namens resolution machen können. Das erreichen wir mit dem folgenden command:
 \begin{verbatim}
 		sudo apt install bind9 bind9utils bind9-doc
@@ -496,10 +495,10 @@ nun starten wir BIND9 neu
 
 
 
-\section{Konfiguration des Primary DNS Servers}
+\subsection{Konfiguration des Primary DNS Servers}
 Zunächst konfigurieren wir den primary DNS Server, welcher auf der EC2 Instanz läuft.
 
-\section{Erstellung der Access Contol List}
+\subsubsection{Erstellung der Access Contol List}
 Zuerst müssen wir eine ACL(Access Contol List) für den primary DNS Server erstellen. Dadurch können wir kontrollieren wer Zugriff auf den name server hat.
 Die ACL kann in named.conf.options geändert werden:
 \begin{verbatim}
@@ -518,7 +517,7 @@ Die ACL kann in named.conf.options geändert werden:
 \end{verbatim}
 
 
-\section{Konfiguration der Allgemeine Optionen}
+\subsubsection{Konfiguration der Allgemeine Optionen}
 Nun editieren wir den options block in dem named.conf.options file um generelle Einstellungen festzulegen.
 \begin{verbatim}
 options {
@@ -537,13 +536,13 @@ options {
 Wenn der DNS Server eine Anfrage bekommt welche er nicht selbst beantworten kann schickt er diese an den unter forwarders definierten Name Server.
 
 
-\subsection{Konfiguration des “Local” Files}
+\subsubsection{Konfiguration des “Local” Files}
 In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich für die Verwaltung und Definition von DNS-Einträgen festlegen.
 \begin{verbatim}
 		sudo nano /etc/bind/named.conf.local
 \end{verbatim}
 
-\subsection{Adding the forward zone}
+\subsubsection{Hinzufügen der Forward Zone}
 \begin{verbatim}
 		zone "semesterDevOps.com" {
 		type primary;
@@ -556,7 +555,7 @@ In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich f
 \textit{allow-transger} → IP Adressen des sekundären Servers welchem es erlaubt ist von diesem Server zu transferieren.
 
 
-\subsection{Hinzufügen der Reverse Zone für das Public Subnet}
+\subsubsection{Hinzufügen der Reverse Zone für das Public Subnet}
 \begin{verbatim}
 		zone "1.0.10.in-addr.arpa" {
 					type primary;
@@ -567,9 +566,7 @@ In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich f
 Um reverse lookups zu erlauben müssen wir die reverse Zone so konfigurieren, dass wir in der Range unseres Public Subnets sind.
 
 
-
-
-\subsection{Adding the reverse file for the Private Subnet}
+\subsubsection{Hinzufügen der Reverse Zone für das Private Subnet}
 \begin{verbatim}
 		zone "2.0.10.in-addr.arpa" {
 					type primary;
@@ -579,14 +576,14 @@ Um reverse lookups zu erlauben müssen wir die reverse Zone so konfigurieren, da
 \end{verbatim}
 Hier machen wir das selbe wie oben für das Private Subnet.
 
-\subsection{Kreieren des Forward Zone Files}
+\subsubsection{Erstellen des Forward Zone Files}
 Die Forward-Nonendatei ist der Ort, an dem wir DNS-Einträge für Forward-DNS-Abfragen definieren. 
 Das bedeutet, wenn der DNS eine Namesabfrage erhält, wird er in der Forward-Zonendatei nachschauen, um die entsprechende private IP-Adresse von host1 zu ermitteln.
-Zuerst müssen wir das Directory kreieren. Hier werden wir auch die forward zone files einfügen:
+Zuerst müssen wir das Directory erstellen. Hier werden wir auch die forward zone files einfügen:
 \begin{verbatim}
 		sudo mkdir /etc/bind/zones
 \end{verbatim}
-Jetzt kreieren wir das zone file:
+Jetzt erstellen wir das zone file:
 \begin{verbatim}
 		sudo nano /etc/bind/zones/db.semesterDevOps.com
 \end{verbatim}
@@ -618,7 +615,7 @@ Jetzt kreieren wir das zone file:
 \end{verbatim}
 
 
-\subsection{Kreieren des Reverese Zone Files für das Public Subnet}
+\subsubsection{Erstellen des Reverese Zone Files für das Public Subnet}
 Reverse-Zonendateien sind der Ort, an dem wir DNS PTR-Einträge für Reverse-DNS-Abfragen definieren. 
 Das bedeutet, wenn der DNS eine Abfrage nach einer IP-Adresse erhält, z. B. 10.0.1.77, wird er in der Reverse-Zonendatei(en) nachschauen, um den entsprechenden FQDN zu ermitteln, z. B. gitlab.semesterDevOps.com in diesem Fall.
 Lassen Sie uns die Zonendatei erstellen:
@@ -670,7 +667,7 @@ Sekundäre Server prüfen, ob die Seriennummer der Zone auf dem primären Server
 
 \newpage
 
-\subsection{Kreieren des Reverse Zone Files für das Private Subnet}
+\subsubsection{Erstellen des Reverse Zone Files für das Private Subnet}
 Nun das selbe für das private subnet
 
 \begin{verbatim}
@@ -699,7 +696,7 @@ sudo nano /etc/bind/zones/db.10.0.2
 		148 IN PTR glrunner.semesterDevOps.com. ; 10.0.2.184
 \end{verbatim}
 
-\section{Checking the BIND Configuration Syntax}
+\paragraph{Überprüfen der BIND Configuration Syntax}
 Wir können die Syntax aller named.conf* Files mit dem folgenden Command überprüfen:
 
 \begin{verbatim}
@@ -710,12 +707,12 @@ um die Zone Files zu überprüfen helfen uns diese beiden:
 		sudo named-checkzone 1.0.10.in-addr.arpa /etc/bind/zones/db.10.0.1
 		sudo named-checkzone 2.0.10.in-addr.arpa /etc/bind/zones/db.10.0.2
 \end{verbatim}
-sobald die Syntax über prüft wurde starten wir BIND9 restarten damit die änderungen angenommen werden:
+sobald die Syntax überprüft wurde starten wir BIND9 restarten damit die änderungen angenommen werden:
 \begin{verbatim}
 		sudo systemctl restart bind9
 \end{verbatim}
 
-\section{Configuring the Secondary DNS Server}
+\subsection{Configuring the Secondary DNS Server}
 
 
 
@@ -747,7 +744,7 @@ Port = 2424
 Damit eine Verbindung über den Port \texttt{2424} möglich ist, muss dieser Port in der Sicherheitsgruppe \texttt{PublicGitLabSecurityGroup} freigegeben werden. Beachten Sie, dass bei jedem SSH-Zugriff auf die GitLab-Instanz der alternative Port angegeben werden muss:
 
 \begin{verbatim}
-ssh ubuntu@3.238.106.29 -p 2424
+ssh ubuntu@98.80.148.9 -p 2424
 \end{verbatim}
 
 \subsection{Installation von GitLab CE mit Docker Compose}
@@ -777,7 +774,7 @@ services:
     hostname: 'gitlab.semesterDevOps.com'
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://3.238.106.29'
+        external_url 'http://98.80.148.9'
     ports:
       - '80:80'
       - '443:443'
@@ -796,16 +793,20 @@ Zum Starten des Containers führen wir folgenden Befehl aus:
 docker compose up -d
 \end{verbatim}
 
-GitLab ist nach kurzer Zeit unter \texttt{http://3.238.106.29} erreichbar. Der Standard-Benutzername lautet \texttt{root}, das Passwort kann mit folgendem Befehl abgerufen werden:
+GitLab ist nach kurzer Zeit unter \texttt{http://98.80.148.9} erreichbar. Der Standard-Benutzername lautet \texttt{root}, das Passwort kann mit folgendem Befehl abgerufen werden:
 
 \begin{verbatim}
 docker compose exec -it gitlab cat /etc/gitlab/initial_root_password
 \end{verbatim}
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{data/GITLAB_GEHT.png}
+	\caption{GitLab läuft}
+	\label{fig:GitLab läuft}
+\end{figure}
 
-
-
-
+\newpage
 
 
 \section{GitLab Runner}
@@ -816,7 +817,7 @@ Wie zuvor verbinden wir uns per SSH mit der Maschine, aktualisieren alle Systemp
     	docker pull gitlab/gitlab-runner:latest
 \end{verbatim}
 
-\section{Installation des GitLab Runners mit Docker}
+\subsection{Installation des GitLab Runners mit Docker}
 Zuerst laden wir das neueste Docker-Image herunter, indem wir folgenden Befehl ausführen.  
 Anschließend erstellen wir ein neues Docker-Volume, um die Konfiguration auch bei Neustarts des Containers zu behalten.
 
@@ -833,18 +834,16 @@ Danach starten wir den GitLab-Runner-Container:
 		gitlab/gitlab-runner:latest
 \end{verbatim}
 
-\section{Registrierung des Runners in GitLab}
-Um den Runner zu registrieren, folgen wir der entsprechenden Dokumentation.  
+\subsection{Registrierung des Runners in GitLab}
+Um den Runner zu registrieren, folgen wir der \href{https://docs.gitlab.com/runner/register/index.html}{entsprechenden Dokumentation}.  
 GitLab-Runner können entweder Projekten, Gruppen oder der gesamten Instanz zugeordnet werden.  
 Wir werden unseren Runner mit der gesamten Instanz verknüpfen.
 
-\section{Erstellen des Runner-Authentifizierungstokens}
+\subsubsection{Erstellen des Runner-Authentifizierungstokens}
 Um ein Authentifizierungstoken für den Runner zu erhalten, müssen wir über die GitLab-Weboberfläche einen Instanz-Runner hinzufügen.  
-Wie das genau funktioniert, ist in der offiziellen Dokumentation beschrieben.
+Wie das genau funktioniert, ist in der \href{https://docs.gitlab.com/17.6/ee/ci/runners/runners_scope.html#create-an-instance-runner-with-a-runner-authentication-token}{offiziellen Dokumentation} beschrieben.
 
-\section{Registering the runner}
-
-\section{Registrierung des Runners}
+\subsubsection{Registrierung des Runners}
 Um einen neuen Runner zu registrieren, führen wir folgenden Befehl (auf der GitLab-Runner-EC2-Instanz) aus:
 
 \begin{verbatim}
@@ -853,54 +852,29 @@ Um einen neuen Runner zu registrieren, führen wir folgenden Befehl (auf der Git
 \end{verbatim}
 
 Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vorzunehmen. Diese konfigurieren wir wie folgt:
+\begin{itemize}
+\item GitLab-Instanz-URL: 
+	\\ Hier geben wir \texttt{http://gitlab.SemesterDevOps.com} ein. Diese URL wird von unserem DNS-Server auf den Server aufgelöst, auf dem die GitLab-Instanz läuft.
+\item Runner-Authentifizierungstoken: 
+	\\ Hier geben wir den \texttt{Token} ein, das in der GitLab-Weboberfläche angezeigt wird.
+\item Executor: 
+	\\ Wir wählen \texttt{docker}.
+\item Standard-Docker-Image: 
+	\\ Wir geben \texttt{alpine:latest} ein.
+\end{itemize}
 
-GitLab-Instanz-URL: Hier geben wir http://gitlab.DevOps.com ein. Diese URL wird von unserem DNS-Server auf den Server aufgelöst, auf dem die GitLab-Instanz läuft.
-Runner-Authentifizierungstoken: Hier geben wir das Token ein, das in der GitLab-Weboberfläche angezeigt wird.
-Executor: Wir wählen Docker.
-Standard-Docker-Image: Wir geben alpine:latest ein.
-
-\section{Integration von LDAP mit GitLab} Als Nächstes integrieren wir LDAP in GitLab. Dazu folgen wir der offiziellen Dokumentation.
-Zuerst müssen wir einige Einstellungen vornehmen, die wir über Umgebungsvariablen in Docker konfigurieren. Dafür bearbeiten wir erneut die docker-compose.yml unseres LDAP-Servers.
-
-\begin{verbatim}
-		services:
-		gitlab:
-		image: gitlab/gitlab-ce:latest
-		container_name: gitlab
-		restart: always
-		hostname: 'gitlab.ilovedevops.com'
-		environment:
-		GITLAB_OMNIBUS_CONFIG: |
-		external_url 'http://54.89.164.241'
-		gitlab_rails['ldap_enabled'] = true
-		gitlab_rails['ldap_servers'] = {
-		'main' => {
-						'label' => 'LDAP',
-						'host' => 'ldap.ilovedevops.com',
-						'port' => 389,
-						'uid' => 'uid',
-						'encryption' => 'plain',
-						'verify_certificates' => false,
-						'active_directory' => false,
-						'base' => 'dc=ilovedevops,dc=com',
-						'lowercase_usernames' => 'false'
-				}
-		}
-		ports:
-		- '80:80'
-		- '443:443'
-		- '22:22'
-		volumes:
-		- '$GITLAB_HOME/config:/etc/gitlab'
-		- '$GITLAB_HOME/logs:/var/log/gitlab'
-		- '$GITLAB_HOME/data:/var/opt/gitlab'
-		shm_size: '256m'
-\end{verbatim}
-
-Die genaue Wirkung dieser Einstellungen wird in der oben verlinkten Dokumentation ausführlich beschrieben.
-Das war’s! Benutzer können sich nun mit ihrer LDAP-UID und ihrem Passwort anmelden.
-
-
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{data/RUNNER_GEHT.png}
+	\caption{GitLab Runner registriert}
+	\label{fig:GitLab Runner registriert}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{data/RUNNER_ONLINE.png}
+	\caption{GitLab Runner ist Online}
+	\label{fig:GitLab Runner ist Online}
+\end{figure}
 
 
 \newpage
