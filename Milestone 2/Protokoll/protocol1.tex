@@ -1,0 +1,760 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{float}
+
+\geometry{a4paper, margin=1in}
+
+\title{Milestone 1: Infrastruktur-Spezifikation}
+\author{Hammerschmidt, Rentenberger, Schodl, Weidinger}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Netzwerktopologie}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{data/DevOps_Network_Topology.png}
+	\caption{Netzwerktopologie der Infrastruktur}
+	\label{fig:network_topology}
+\end{figure}
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|l|l|l|l|}
+		\hline
+		\textbf{Dienst} & \textbf{Subnetztyp}  & \textbf{IP-Adresse} & \textbf{FQDN}      \\ \hline
+		Primärer DNS    & Privates Subnetz     & 10.0.1.10           & dns1.semester.at   \\ \hline
+		Sekundärer DNS  & Privates Subnetz     & 10.0.1.11           & dns2.semester.at   \\ \hline
+		GitLab Server   & Öffentliches Subnetz & 10.0.0.10           & gitlab.semester.at \\ \hline
+		LDAP Server     & Privates Subnetz     & 10.0.2.10           & ldap.semester.at   \\ \hline
+	\end{tabular}
+	\caption{Netzwerkdienste und IP-Zuordnung}
+\end{table}
+
+\newpage
+
+\section{Geplante Security Groups und Regeln}
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|l|c|c|c|c|}
+		\hline
+		\textbf{Inbound SGRs} & \textbf{DNS} & \textbf{LDAP/GitLab-R} & \textbf{GitLab-Server} \\ \hline
+		HTTP                  & Nein             & Nein                   & Ja                     \\ \hline
+		HTTPS                 & Nein             & Ja                     & Ja                     \\ \hline
+		SSH                   & Ja               & Ja                     & Ja                     \\ \hline
+		DNS (UDP)             & Ja             & Nein                   & Nein                   \\ \hline
+		DNS (TCP)             & Ja             & Nein                   & Nein                   \\ \hline
+		LDAP                  & Nein             & Ja                     & Ja                     \\ \hline
+		ALL ICMP              & Ja             & Nein                   & Ja                     \\ \hline
+	\end{tabular}
+	\caption{Eingehende Sicherheitsgruppenregeln (SGRs) für verschiedene Dienste}
+	\label{tab:inbound-sgrs}
+\end{table}
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|l|c|c|c|c|}
+		\hline
+		\textbf{Outbound SGRs} & \textbf{DNS} & \textbf{LDAP/GitLab-R} & \textbf{GitLab-Server} \\ \hline
+		HTTP                   & Nein         & Ja                     & Nein                   \\ \hline
+		HTTPS                  & Nein         & Ja                     & Nein                   \\ \hline
+		SSH                    & Nein         & Ja                     & Nein                   \\ \hline
+		DNS (UDP)              & Nein         & Ja                     & Nein                   \\ \hline
+		DNS (TCP)              & Nein         & Ja                     & Nein                   \\ \hline
+		LDAP                   & Nein         & Ja                     & Ja                     \\ \hline
+		ALL ICMP               & Nein         & Ja                     & Nein                   \\ \hline
+		ALL Traffic            & Ja           & Nein                   & Ja                     \\ \hline
+	\end{tabular}
+	\caption{Ausgehende Sicherheitsgruppenregeln (SGRs) für verschiedene Dienste}
+	\label{tab:outbound-sgrs}
+\end{table}
+
+
+\newpage
+\section{Spezifikationen der eingesetzten Systeme}
+
+\begin{table}[h!]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textbf{Server}       & \textbf{OS}   & \textbf{Packages} & \textbf{Version}             & \textbf{Server Instance} \\ \hline
+			Primärer DNS Server   & Ubuntu Server & bind9, bind9utils & BIND 9 / Ubuntu 24.04 LTS    & T3.micro                 \\ \hline
+			Sekundärer DNS Server & Ubuntu Server & bind9, bind9utils & BIND 9 / Ubuntu 24.04 LTS    & T3.micro                 \\ \hline
+			LDAP Server           & Ubuntu Server & slapd, ldap-utils & OpenLDAP 2.6                 & T3.micro                 \\ \hline
+			GitLab Runner         & Ubuntu Server & -                 & Ubuntu 24.04 LTS             & T3.micro                 \\ \hline
+			GitLab Server         & Ubuntu Server & GitLab CE         & GitLab CE / Ubuntu 24.04 LTS & T2.Large                 \\ \hline
+		\end{tabular}
+	}
+	\caption{Server-Spezifikationen: Betriebssystem, Pakete und Instanztypen}
+	\label{tab:server-specs}
+\end{table}
+
+
+\begin{itemize}
+	\item \textbf{Betriebssystem}: Ubuntu 24.04 LTS LTS (64-bit)
+	\item \textbf{DNS-Server}: BIND 9.x
+	\item \textbf{GitLab}: GitLab CE 15.x
+	\item \textbf{GitLab Runner}: Version kompatibel mit GitLab CE 15.x
+	\item \textbf{LDAP}: OpenLDAP 2.6.x
+	\item \textbf{Monitoring}: AWS CloudWatch zur Protokollierung und Überwachung.
+\end{itemize}
+
+\newpage
+
+\section{Tests}
+\subsection*{DNS Resolution Testing}
+\begin{itemize}[leftmargin=1.5cm]
+	\item \textbf{Ziel:} Sicherstellen, dass der BIND-Server Domain-Namen korrekt auflöst.
+	\item \textbf{Methode:} Verwenden des \texttt{dig}-Befehls, um den DNS-Server nach bekannten Domains abzufragen. Überprüfen der \texttt{A}, \texttt{AAAA}, \texttt{MX} und \texttt{NS} Records:
+	      \begin{verbatim}
+    dig @<DNS-server> example.com [A, AAAA, MX, NS]
+    \end{verbatim}
+	\item \textbf{Erwartetes Ergebnis:} Jede Abfrage liefert die richtigen IP-Adressen und Record-Details.
+\end{itemize}
+
+\subsection*{Forward and Reverse DNS Lookup}
+\begin{itemize}[leftmargin=1.5cm]
+	\item \textbf{Ziel:} Überprüfen, dass Vorwärts- und Rückwärts-Abfragen funktionieren.
+	\item \textbf{Methode:}
+	      \begin{itemize}
+		      \item Verwenden von \texttt{dig} für die Vorwärtsabfrage (Domain zu IP):
+		            \begin{verbatim}
+        dig @<DNS-server> example.com A
+        \end{verbatim}
+		      \item Verwenden von \texttt{dig -x} für die Rückwärtsabfrage (IP zu Domain):
+		            \begin{verbatim}
+        dig @<DNS-server> -x [192.0.2.1]
+        \end{verbatim}
+	      \end{itemize}
+	\item \textbf{Erwartetes Ergebnis:} Genaues Mapping zwischen Domain-Namen und IP-Adressen.
+\end{itemize}
+
+\subsection*{Zone Transfer Test}
+\begin{itemize}[leftmargin=1.5cm]
+	\item \textbf{Ziel:} Sicherstellen, dass Zonentransfers zwischen primären und sekundären DNS-Servern funktionieren.
+	\item \textbf{Methode:} Einen Zonentransfer mit \texttt{dig AXFR} anstoßen und die Logs auf den Transfer überprüfen:
+	      \begin{verbatim}
+    dig @<primary-DNS-server> example.com AXFR
+    \end{verbatim}
+	\item \textbf{Erwartetes Ergebnis:} Zonendaten werden korrekt zwischen primären und sekundären Servern repliziert.
+\end{itemize}
+
+\subsection*{DNS Failover Testing}
+\begin{itemize}[leftmargin=1.5cm]
+	\item \textbf{Ziel:} Die Resilienz und Zuverlässigkeit des DNS-Dienstes unter Ausfallbedingungen bewerten.
+	\item \textbf{Methode:}
+	      \begin{itemize}
+		      \item Einen Ausfall des primären DNS-Servers simulieren.
+		      \item Die Antwort des sekundären DNS-Servers überwachen:
+		            \begin{verbatim}
+        dig @<secondary-DNS-server> example.com A
+        \end{verbatim}
+		      \item Etwaige Ausfallzeiten während des Übergangs protokollieren.
+	      \end{itemize}
+	\item \textbf{Erwartetes Ergebnis:} Der sekundäre DNS-Server übernimmt nahtlos mit wenig bis gar keiner Unterbrechung der DNS-Auflösung.
+\end{itemize}
+
+\subsection*{Stress Testing}
+\begin{itemize}[leftmargin=1.5cm]
+	\item \textbf{Ziel:} Die Leistung des Servers unter hoher Last testen.
+	\item \textbf{Methode:} Tools wie \texttt{dnsperf} verwenden, um eine hohe Anzahl von DNS-Abfragen zu simulieren:
+	      \begin{verbatim}
+    dnsperf -s <primary-DNS-IP> -d queries.txt -l 30
+    \end{verbatim}
+	\item \textbf{Erwartetes Ergebnis:} Der Server bleibt auch unter Last genau und leistungsfähig.
+\end{itemize}
+
+subsection*{LDAP-Authentifizierungstest}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Funktionalität des Authentifizierungssystems überprüfen.
+	\item \textbf{Methode:} Benutzeranmeldungen über LDAP versuchen. Tests mit gültigen und ungültigen Anmeldedaten durchführen.
+	\item \textbf{Erwartetes Ergebnis:} Anmeldeversuche sollten für gültige Anmeldedaten akzeptiert und für ungültige Anmeldedaten abgelehnt werden.
+\end{itemize}
+
+\subsection*{LDAP-Suche und -Filterung}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Genauigkeit der LDAP-Suche und -Filterung bestätigen.
+	\item \textbf{Methode:} Suchen nach bestimmten Benutzergruppen oder Attributen durchführen und Filter testen.
+	\item \textbf{Erwartetes Ergebnis:} Für jede Suche und jeden Filter werden die korrekten Daten zurückgegeben.
+\end{itemize}
+
+\subsection*{Benutzer- und Gruppenverwaltung}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Testen der Erstellung und Änderung von Benutzern und Gruppen.
+	\item \textbf{Methode:} Gruppen und Benutzer erstellen sowie deren Attribute ändern. Änderungen im LDAP-Verzeichnis überwachen.
+	\item \textbf{Erwartetes Ergebnis:} Alle Änderungen werden korrekt im LDAP-Verzeichnis angezeigt.
+\end{itemize}
+
+\subsection*{LDAP-Integrationstest}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Testen, ob die Integration der GitLab-Authentifizierung mit LDAP funktioniert.
+	\item \textbf{Methode:} Anmeldungen bei GitLab mit LDAP-Anmeldedaten (verschiedene Rollen) durchführen.
+	\item \textbf{Erwartetes Ergebnis:} Benutzeranmeldungen werden mit LDAP-Anmeldedaten akzeptiert.
+\end{itemize}
+
+\subsection*{Repository-Operationen}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Testen, ob Standard-Git-Operationen innerhalb von GitLab funktionieren.
+	\item \textbf{Methode:} Neben der Erstellung von Repositories werden Pull-, Push- und Merge-Operationen getestet. Zusätzlich werden Branches erstellt und gelöscht.
+	\item \textbf{Erwartetes Ergebnis:} Änderungen entsprechen den erwarteten Ergebnissen der Git-Operationen.
+\end{itemize}
+
+\subsection*{CI/CD-Pipeline-Test}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Funktionalität der CI/CD-Pipeline überprüfen.
+	\item \textbf{Methode:} Geänderten Code pushen und die automatische Ausführung der CI/CD-Pipeline beobachten. Erfolg des Builds und der Bereitstellung prüfen.
+	\item \textbf{Erwartetes Ergebnis:} Codeänderungen werden automatisch gebaut und fehlerfrei bereitgestellt.
+\end{itemize}
+
+\subsection*{Lasttest}
+\begin{itemize}[label=--]
+	\item \textbf{Ziel:} Leistung von GitLab unter hoher Last bewerten.
+	\item \textbf{Methode:} Mehrere Benutzer simulieren, die gleichzeitig Git-Operationen durchführen.
+	\item \textbf{Erwartetes Ergebnis:} GitLab hält die Leistungsniveaus auch bei gleichzeitiger Nutzung aufrecht.
+\end{itemize}
+
+\newpage
+
+\section{Rollen und Verantwortlichkeiten im Team}
+
+\begin{table}[h!]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|}
+			\hline
+			\textbf{Samuel Hammerschmidt} & \textbf{Lorenz Rentenberger} & \textbf{Nikolas Schodl} & \textbf{Alexander Weidinger} \\ \hline
+			LDAP Server                   & DNS Server (CloudWatch)      & GitLab Server           & GitLab Server                \\ \hline
+			AWS Cloud Config              & AWS Cloud Config             & AWS Cloud Config        & AWS Cloud Config             \\ \hline
+			Tests LDAP                    & Tests DNS                    & Tests GitLab            & Tests GitLab                 \\ \hline
+		\end{tabular}
+	}
+	\caption{Team-Aufgaben und Zuständigkeiten}
+	\label{tab:team-responsibilities}
+\end{table}
+
+
+\section{Monitoring}
+AWS CloudWatch wird zur Protokollierung und Überwachung genutzt:
+\begin{itemize}
+	\item Überwachung der CPU-, Speicher- und Netzwerknutzung.
+	\item Automatische Alarme bei Ausfällen.
+\end{itemize}
+
+\section{Create VPC}
+
+Um ein VPC zu erstellen müssen wir zu erst Sicherstellen, dass wir in der richtigen Region sind. 
+In unserem Fall ist das "us-east-1". 
+---SCREENSHOT---
+
+\section{Creating Subnets}
+\subsection{Private Subnet}
+
+Zuerst erstellte wir ein privates Subnets. 
+Wie im Bild unten angeführt, wählen wir die richtigen VPC(10.0.0.0/16) aus
+und konfigurieren die private CIDR-Block(10.0.2.0/24).
+---SCREENSHOT---
+
+\subsection{Public Subnet}
+Beim Erstellen vom Public Subnet, gehen wir die selbe Schritte durch,
+doch ändern den CIDR-Block auf 10.0.1.0/24.
+
+---SCREENSHOT---
+
+
+\subsubsection{Enabling Auto-assign IP for Public Subnet}
+Wichtig zum Erwähnen ist die Aktivierung der Option "Enable auto-assign public IPv4 address". 
+Das sorgt dafür, dass jeder neuerstellten EC2 Instanz eine neue IP Adresse erstellt wird.
+----SCREENSHOT ODER KURZ ERKLÄREN----
+
+
+
+\section{Internet Access}
+\subsection{Enabling Internet Access for Public Subnet}
+Doch eine Subnet Public zu setzen reicht nicht, Sie muss auch einen Internetzugriff bekommen.
+Dafür verwenden wir die 'route-table', die wiederum Zugriff auf das Internet Gateway gewährt.
+
+\subsubsection{Internet Gateway}
+Zuerst erstellen wir ein Gateway, mit dem Namen 'Semester-igw'. 
+Dem Gateway geben wir zusätzlich Tags, um später die Suche von diesem zu erleichtern.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{data/Create_IGW.png}
+	\caption{Internet Gateway erstellen}
+	\label{fig:Internet Gateway}
+\end{figure}
+
+Das Gateway ist erstellt, aber ist keinem VPC zugewiesen. 
+Beim Gateway unter 'Actions' fügen wir dies hinzu.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{data/Attach_IGW.png}
+	\caption{Internet Gateway einem VPC hinzufügen}
+	\label{fig:Attach Internet Gateway}
+\end{figure}
+
+\subsubsection{Routing Table}
+Jetzt aktualisieren wir eine neue Routing Table, damit das Gateway Internetzugriff hat.
+In dem Tab "Route Tables" editieren wir die Table mit dem Wert "----SUCHE WERT----".
+----SCHRITT MIT "TAG" GEMACHT ODER NICHT????----
+
+Nun selectieren wir die Table. 
+
+----WAS PASSIERT HIER????----
+
+
+
+\subsection{Enabling Internet Access for Private Subnet}
+Das private Subnet hat keinen direkten Zugriff, sondern nutzt ein NAT Gateway vom Public Subnet.
+
+\subsubsection{NAT Gateway}
+----SCREENSHOT----
+
+\subsubsection{Routing Table}
+Wie beim Public Subnet, muss nun die Routing Table aktualisieren.
+----SCREENSHOT----
+
+\section{Security Groups}
+Für das Projekt haben wir mehrere Security Groups erstellt.
+\subsection{Public GitLab}
+\begin{table}[h!]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textbf{Type}       & \textbf{Internet-Protokoll}   & \textbf{Port} & \textbf{Source}   & \textbf{Desc.}   \\ \hline
+			Inbound   	& TCP 	& 80 		& 0.0.0.0/0    	& HTTP                 			\\ \hline
+			Inbound 	& TCP 	& 443 		& 0.0.0.0/0    	& HTTPS                			\\ \hline
+			Inbound     & TCP 	& 22 		& 0.0.0.0/0     & SSH(GitLab)               	\\ \hline
+			Inbound     & TCP 	& 2424      & My IP         & SSH(Admin)                	\\ \hline
+			Outbound    & ALL 	& ALL       & 0.0.0.0/0		& Allow all outbound traffic    \\ \hline
+		\end{tabular}
+	}
+	\caption{Security Group: Public GitLab}
+	\label{tab:sec-Group-GitLab-Public}
+\end{table}
+
+\subsection{Private GitLab}
+\begin{table}[h!]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textbf{Type}       & \textbf{Internet-Protokoll}   & \textbf{Port} & \textbf{Source}   & \textbf{Desc.}   \\ \hline
+			Inbound   	& TCP 	& 80 		& 0.0.0.0/0    	& HTTP                 			\\ \hline
+			Inbound 	& TCP 	& 443 		& 0.0.0.0/0    	& HTTPS                			\\ \hline
+			Inbound     & TCP 	& 22 		& 0.0.0.0/0     & SSH			               	\\ \hline
+			Outbound    & ALL 	& ALL       & 0.0.0.0/0		& Allow all outbound traffic    \\ \hline
+		\end{tabular}
+	}
+	\caption{Security Group: Private GitLab}
+	\label{tab:sec-Group-GitLab-Private}
+\end{table}
+
+
+\subsection{DNS}
+\begin{table}[H]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textbf{Type}       & \textbf{Internet-Protokoll}   & \textbf{Port} & \textbf{Source}   & \textbf{Desc.}   \\ \hline
+			Inbound   	& TCP 	& 53 		& 0.0.0.0/0    	& HTTP                 			\\ \hline
+			Inbound 	& TCP 	& 53 		& 0.0.0.0/0    	& HTTPS                			\\ \hline
+			Inbound     & TCP 	& 22 		& 0.0.0.0/0     & SSH			               	\\ \hline
+			Outbound    & ALL 	& ALL       & 0.0.0.0/0		& Allow all outbound traffic    \\ \hline
+		\end{tabular}
+	}
+	\caption{Security Group: DNS}
+	\label{tab:sec-Group-DNS}
+\end{table}
+
+\subsection{LDAP}
+\begin{table}[H]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textbf{Type}       & \textbf{Internet-Protokoll}   & \textbf{Port} & \textbf{Source}   & \textbf{Desc.}   \\ \hline
+			Inbound   	& TCP 	& 53 		& 0.0.0.0/0    	& HTTP                 			\\ \hline
+			Inbound 	& TCP 	& 53 		& 0.0.0.0/0    	& HTTPS                			\\ \hline
+			Inbound     & TCP 	& 22 		& 0.0.0.0/0     & SSH			               	\\ \hline
+			Outbound    & ALL 	& ALL       & 0.0.0.0/0		& Allow all outbound traffic    \\ \hline
+		\end{tabular}
+	}
+	\caption{Security Group: LDAP}
+	\label{tab:sec-Group-LDAP}
+\end{table}
+
+
+\section{Launch Instance}
+
+Die folgenden zwei Screenshots zeigen wie wir zwei Ubuntu-Instanzen für Primary und Secondary DNS erstellen können.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{data/Launch_Instance_DNS_Primary.png}
+	\caption{Instanzerstellung vom Primary DNS}
+	\label{fig:Instanzecreation vom Primary DNS}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{data/Launch_Instance_DNS_Primary2.png}
+	\caption{Instanzerstellung vom Primary DNS}
+	\label{fig:Instanzecreation vom Primary DNS2}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{data/Launch_Instance_DNS_Secondary.png}
+	\caption{Instanzerstellung vom Secondary DNS}
+	\label{fig:Instanzecreation vom Secondary DNS}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{data/Launch_Instance_DNS_Secondary2.png}
+	\caption{Instanzerstellung vom Secondary DNS}
+	\label{fig:Instanzecreation vom Secondary DNS2}
+\end{figure}
+
+\section{SSH Access zum Servers in Private Subnet}
+Weil die server in dem private Subnet keine public IPV4 Adresse haben können wir nicht auf sie direkt mit SSH zugreifen. 
+Wir können um das doch zu erreichen einen Umweg über den GitLab server nehmen, welcher sich im public subnet befindet und eine public IPV4 Adresse hat.
+
+\section{Setting up SSH Agent Forwarding}
+Wir müssen zuerst den SSH Key den wir von AWS Academy bekommen haben hinzufügen.
+\begin{verbatim}
+		ssh-add. ~/.ssh/labsuser.pem
+\end{verbatim}
+
+Wir müssen nun SSH Agent Forwarding durch Änderung des files \~{} \textit{/.ssh/config} und durch den folgenden Command ermöglichen:
+\begin{verbatim}
+		Host example.com 
+		ForwardAgent yes
+\end{verbatim}
+Nun müssen wir example.com mit der public IPV4 Adresse von GitLab ersetzen.
+
+
+\section{SSH Zugriff}
+Wir können jetzt SSH verwenden um den GitLab Server zu erreichen.
+\begin{verbatim}
+		ssh ubuntu@98.81.217.50 ----IP ÜBERPRÜFEN
+\end{verbatim}
+Public IP vom EC2 GitLab Server und vom GitLab Server zu einem Private Subnet Server springen.
+
+\begin{verbatim}
+	ssh ubuntu@10.0.2.252(Private IP des DNS-Primary EC2 Servers)  -ÄNDER AUF RICHTIG
+\end{verbatim}
+
+
+\section{Aktualisieren des Betriebssystems}
+
+Sobald wir auf dem primary DNS Server sind müssen wir zuerst sicherstellen, dass das Betriebssystem auf dem neusesten Stand ist.
+Um das zu erreichen führen wir die folgenden Commands aus.
+\begin{verbatim}
+		sudo apt update && sudo apt upgrade && sudo apt full-upgrade
+		sudo reboot
+\end{verbatim}
+
+
+\section{Setup der DNS Server}
+Nun konfigurieren wir die beiden DNS Server
+
+
+\section{Installation von BIND9}
+Nachdem wir sichergegangen sind, dass das Betriebssystem auf dem neuesten Stand ist installieren wir BIND9. Eine Software Package mit welchem namens resolution machen können. Das erreichen wir mit dem folgenden command:
+\begin{verbatim}
+		sudo apt install bind9 bind9utils bind9-doc
+\end{verbatim}
+
+Wir setzen nun BIND in den IPV4 Modus. Das erreichen wir indem wir das file \textit{/etc/default/named ändern} und -4 am Ende vom OPTIONS Parameter hinzufügen.
+\begin{verbatim}
+		OPTIONS=“-u bind -4”
+\end{verbatim}
+nun starten wir BIND9 neu
+\begin{verbatim}
+		sudo systemctl restart bind9
+\end{verbatim}
+
+
+
+\section{Konfiguration des Primary DNS Servers}
+Zunächst konfigurieren wir den primary DNS Server, welcher auf der EC2 Instanz läuft.
+
+\section{Erstellung der Access Contol List}
+Zuerst müssen wir eine ACL(Access Contol List) für den primary DNS Server erstellen. Dadurch können wir kontrollieren wer Zugriff auf den name server hat.
+Die ACL kann in named.conf.options geändert werden:
+\begin{verbatim}
+		sudo nano /etc/bind/named.conf.options
+\end{verbatim}
+
+
+Über dem Options-Block erstellen wir eine neue Access Control List namens trusted. In dieser benennen wir alle Clients denen wir Zugriff auf den Name Server geben wollen.
+\begin{verbatim}
+		acl "trusted" {
+						10.0.2.252;   --ÄNDERN AUF RICHTIGE
+						10.0.2.217;
+						10.0.1.77;
+						10.0.2.148;
+						10.0.2.146;
+		};
+\end{verbatim}
+
+
+\section{Konfiguration der Allgemeine Optionen}
+Nun editieren wir den options block in dem named.conf.options file um generelle Einstellungen festzulegen.
+\begin{verbatim}
+options {
+		directory "/var/cache/bind";
+		recursion yes; # enables recursive queries
+		allow-recursion { trusted; }; # allows recursive queries from "trusted" clients
+		listen-on { 10.0.0.0/16; }; # VPC CIDR - listen on private network only
+		allow-transfer { none; }; # disable zone transfers by default
+		forwarders {
+			8.8.8.8;
+			8.8.4.4;
+		};
+		...
+};
+\end{verbatim}
+Wenn der DNS Server eine Anfrage bekommt welche er nicht selbst beantworten kann schickt er diese an den unter forwarders definierten Name Server.
+
+
+\subsection{Konfiguration des “Local” Files}
+In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich für die Verwaltung und Definition von DNS-Einträgen festlegen.
+\begin{verbatim}
+		sudo nano /etc/bind/named.conf.local
+\end{verbatim}
+
+
+\subsection{Adding the forward zone}
+\begin{verbatim}
+		zone "ilovedevops.com" {
+		type primary;
+		file "/etc/bind/zones/db.ilovedevops.com"; 
+		allow-transfer { 10.0.2.217; }; 
+		};
+\end{verbatim}
+\textit{type primary} → definiert diesen Server als den primary name Server für die Zone.
+\textit{File} → Pfad zum zone file
+\textit{allow-transger} → IP Adressen des sekundären Servers welchem es erlaubt ist von diesem Server zu transferieren.
+
+
+\subsection{Hinzufügen der Reverse Zone für das Public Subnet}
+\begin{verbatim}
+		zone "1.0.10.in-addr.arpa" {
+					type primary;
+					file "/etc/bind/zones/db.10.0.1"; # 10.0.1.0/24 Subnet
+					allow-transfer { 10.0.2.217; }; # ns2 private IP address - secondary
+		};
+\end{verbatim}
+Um reverse lookups zu erlauben müssen wir die reverse Zone so konfigurieren, dass wir in der Range unseres Public Subnets sind.
+
+
+
+
+\subsection{Adding the reverse file for the Private Subnet}
+\begin{verbatim}
+		zone "2.0.10.in-addr.arpa" {
+					type primary;
+					file "/etc/bind/zones/db.10.0.2"; # 10.0.2.0/24 Subnet
+					allow-transfer { 10.0.2.217; }; # ns2 private IP address - secondary
+					};
+\end{verbatim}
+Hier machen wir das selbe wie oben für das Private Subnet.
+
+\subsection{Kreieren des Forward Zone Files}
+Die Forward-Nonendatei ist der Ort, an dem wir DNS-Einträge für Forward-DNS-Abfragen definieren. 
+Das bedeutet, wenn der DNS eine Namesabfrage erhält, wird er in der Forward-Zonendatei nachschauen, um die entsprechende private IP-Adresse von host1 zu ermitteln.
+Zuerst müssen wir das Directory kreieren. Hier werden wir auch die forward zone files einfügen:
+\begin{verbatim}
+		sudo mkdir /etc/bind/zones
+\end{verbatim}
+Jetzt kreieren wir das zone file:
+\begin{verbatim}
+		sudo nano /etc/bind/zones/db.ilovedevops.com
+\end{verbatim}
+
+\begin{verbatim}
+		;
+		; BIND data file for local loopback interface
+		;
+		$TTL 604800
+		@ IN SOA ns1.ilovedevops.com. admin.ilovedevops.com. (
+						3 ; Serial
+						604800 ; Refresh
+						86400 ; Retry
+						2419200 ; Expire
+						604800 ) ; Negative Cache TTL
+		;
+
+		; name servers - NS records
+				IN	NS 	ns1.ilovedevops.com.
+				IN 	NS 	ns2.ilovedevops.com.
+
+		; name servers - A records
+		ns1.ilovedevops.com. 	IN	A		10.0.2.252     -ÄNDERN AUF RICHTIG
+		ns2.ilovedevops.com. 	IN	A		10.0.2.217
+
+		; 10.0.0.0/16 - A records
+		gitlab.ilovedevops.com. IN 	A 	10.0.1.77
+		glrunner.ilovedevops.com. 	IN 	A 	10.0.2.148
+		ldap.ilovedevops.com. 	IN	 A 	10.0.2.146
+\end{verbatim}
+
+
+\subsection{Kreieren des Reverese Zone Files für das Public Subnet}
+Reverse-Zonendateien sind der Ort, an dem wir DNS PTR-Einträge für Reverse-DNS-Abfragen definieren. 
+Das bedeutet, wenn der DNS eine Abfrage nach einer IP-Adresse erhält, z. B. 10.0.1.77, wird er in der Reverse-Zonendatei(en) nachschauen, um den entsprechenden FQDN zu ermitteln, z. B. gitlab.ilovedevops.com in diesem Fall.
+Lassen Sie uns die Zonendatei erstellen:
+
+\begin{verbatim}
+		sudo nano /etc/bind/zones/db.10.0.1
+\end{verbatim}
+\begin{verbatim}
+		;
+		; BIND reverse data file for 10.0.1.0/24
+		;
+		$TTL 604800
+		@ IN SOA ns1.ilovedevops.com. admin.ilovedevops.com. (
+				2024011201 ; Serial (YYYYMMDDnn)
+				604800 ; Refresh
+				86400 ; Retry
+				2419200 ; Expire
+				604800 
+		) ; Negative Cache TTL
+		;
+		; Name servers - NS records
+		IN NS ns1.ilovedevops.com.
+		IN NS ns2.ilovedevops.com.
+		; PTR Records
+		77 IN PTR gitlab.ilovedevops.com. ; 10.0.1.77
+\end{verbatim}
+
+\begin{itemize}
+	\item ilovedevops.com. oder @ : Wurzel der Zone. Dies gibt an, dass die Zonendatei für die Domain ilovedevops.com bestimmt ist.
+@ ist nur ein Platzhalter, der den Inhalt der \${}ORIGIN-Variable ersetzt.
+
+\item IN SOA: Der Teil „IN“ steht für Internet. SOA ist der Hinweis darauf, dass dies ein Start of Authority-Eintrag ist.
+
+\item ns1.ilovedevops.com.: Definiert den primären Nameserver für diese Domain.
+
+\item admin.ilovedevops.com.: E-Mail-Adresse des Administrators für diese Zone. Das „@“ wird in der E-Mail-Adresse durch einen Punkt ersetzt.
+
+\item Serial: Seriennummer für die Zonendatei. Jedes Mal, wenn die Zonendatei bearbeitet wird, muss diese Nummer inkrementiert werden, damit die Zonendatei korrekt propagiert wird.
+Sekundäre Server prüfen, ob die Seriennummer der Zone auf dem primären Server größer ist als die, die sie auf ihrem System haben. Ist dies der Fall, fordert der sekundäre Server die neue Zonendatei an; wenn nicht, wird weiterhin die ursprüngliche Datei bereitgestellt.
+
+\item Refresh: Aktualisierungsintervall für die Zone. Dies ist der Zeitraum, den der sekundäre Server wartet, bevor er den primären Server auf Änderungen der Zonendatei abfragt.
+
+\item Retry: Wiederholungsintervall für diese Zone. Wenn der sekundäre Server nach Ablauf des Aktualisierungsintervalls keine Verbindung zum primären Server herstellen kann, wartet er diesen Zeitraum und versucht dann erneut, den primären Server abzufragen.
+
+\item Expire: Ablaufzeitraum. Wenn ein sekundärer Nameserver den primären Server für diesen Zeitraum nicht kontaktieren konnte, gibt er keine Antworten mehr als autoritative Quelle für diese Zone zurück.
+
+\item Negative Cache TTL: Zeitraum, für den der Nameserver einen Namensfehler zwischenspeichert, wenn der angeforderte Name in dieser Datei nicht gefunden werden kann.
+\end{itemize}
+
+\subsection{Kreieren des Reverse Zone Files für das Private Subnet}
+Nun das selbe für das private subnet
+
+\begin{verbatim}
+sudo nano /etc/bind/zones/db.10.0.2
+\end{verbatim}
+
+\begin{verbatim}
+		;
+		; BIND reverse data file for 10.0.2.0/24
+		;
+		$TTL 604800
+		@ IN SOA ilovedevops.com. admin.ilovedevops.com. (
+				1 ; Serial 
+				604800 ; Refresh
+				86400 ; Retry
+				2419200 ; Expire
+				604800 
+		) ; Negative Cache TTL
+		;
+		; Name servers - NS records
+		IN NS ns1.ilovedevops.com.
+		IN NS ns2.ilovedevops.com.
+		; PTR Records
+		252 IN PTR ns1.ilovedevops.com. ; 10.0.2.252			--ÄNDERN AUF RICHTIG
+		217 IN PTR ns2.ilovedevops.com. ; 10.0.2.217
+		148 IN PTR glrunner.ilovedevops.com. ; 10.0.2.148
+		146 IN PTR ldap.ilovedevops.com. ; 10.0.2.146
+\end{verbatim}
+
+\section{Checking the BIND Configuration Syntax}
+Wir können die Syntax aller named.conf* Files mit dem folgenden Command überprüfen:
+
+\begin{verbatim}
+		sudo named-checkconf
+\end{verbatim}
+um die Zone Files zu überprüfen helfen uns diese beiden:
+\begin{verbatim}
+		sudo named-checkzone 1.0.10.in-addr.arpa /etc/bind/zones/db.10.0.1
+		sudo named-checkzone 2.0.10.in-addr.arpa /etc/bind/zones/db.10.0.2
+\end{verbatim}
+sobald die Syntax über prüft wurde starten wir BIND9 restarten damit die änderungen angenommen werden:
+\begin{verbatim}
+		sudo systemctl restart bind9
+\end{verbatim}
+
+\section{Configuring the Secondary DNS Server}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+\addcontentsline{toc}{section}{Abbildungsverzeichnis}
+\listoffigures
+\newpage
+\addcontentsline{toc}{section}{Tabellenverzeichnis}
+\listoftables
+
+\end{document}
