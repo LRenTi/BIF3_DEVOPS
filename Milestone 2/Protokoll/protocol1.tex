@@ -36,11 +36,11 @@
 	\begin{tabular}{|l|l|l|l|}
 		\hline
 		\textbf{Dienst} & \textbf{Subnetztyp}  & \textbf{IP-Adresse} & \textbf{FQDN}      \\ \hline
-		Primärer DNS    & Privates Subnetz     & 10.0.2.225          & ns1.semester.devops.com   \\ \hline
-		Sekundärer DNS  & Privates Subnetz     & 10.0.2.10           & ns2.semester.devops.com   \\ \hline
-		GitLab Server   & Öffentliches Subnetz & Public              & gitlab.semester.devops.com \\ \hline
-		LDAP Server     & Privates Subnetz     & 10.0.2.10           & ldap.semester.devops.com   \\ \hline
-		GitLab-Runner	& Privates Subnetz	   & 10.0.2.184			 & gitlab.semester.devops.com \\ \hline
+		Primärer DNS    & Privates Subnetz     & 10.0.2.225          & ns1.semesterDevOps.com   \\ \hline
+		Sekundärer DNS  & Privates Subnetz     & 10.0.2.10           & ns2.semesterDevOps.com   \\ \hline
+		GitLab Server   & Öffentliches Subnetz & Public              & gitlab.semesterDevOps.com \\ \hline
+		LDAP Server     & Privates Subnetz     & 10.0.2.10           & ldap.semesterDevOps.com   \\ \hline
+		GitLab-Runner	& Privates Subnetz	   & 10.0.2.184			 & gitlab.semesterDevOps.com \\ \hline
 	\end{tabular}
 	\caption{Netzwerkdienste und IP-Zuordnung}
 \end{table}
@@ -668,6 +668,8 @@ Sekundäre Server prüfen, ob die Seriennummer der Zone auf dem primären Server
 \item Negative Cache TTL: Zeitraum, für den der Nameserver einen Namensfehler zwischenspeichert, wenn der angeforderte Name in dieser Datei nicht gefunden werden kann.
 \end{itemize}
 
+\newpage
+
 \subsection{Kreieren des Reverse Zone Files für das Private Subnet}
 Nun das selbe für das private subnet
 
@@ -728,36 +730,29 @@ sobald die Syntax über prüft wurde starten wir BIND9 restarten damit die ände
 
 
 
-
+\newpage
 
 \section{GitLab}
 
-\subsection{Wechsel zum öffentlichen GitLab-Server}
-Wir aktualisieren alle Pakete und starten das System neu, falls dies noch nicht geschehen ist.
-
 \subsection{Konfiguration des SSH-Ports}
 GitLab erlaubt es Benutzern, über SSH auf Repositories zuzugreifen. Dies führt jedoch zu Konflikten mit dem standardmäßigen SSH-Zugang des Systems. Daher ändern wir den SSH-Port des Systems auf \texttt{2424}, sodass der Port \texttt{22} für GitLab verwendet werden kann.
-
 Diese Konfiguration wurde gewählt, da das Klonen eines Repositories eine häufigere Aufgabe ist als der SSH-Zugriff auf den Server. Durch die Verwendung des Standard-Ports für das Repository-Klonen entfällt die Notwendigkeit, einen benutzerdefinierten Port anzugeben. Für den selteneren SSH-Zugriff muss der alternative Port explizit angegeben werden.
-
 Die Änderung wird in der Datei \texttt{/etc/ssh/sshd\_config} vorgenommen:
 
 \begin{verbatim}
-Port 2424
+Port = 2424
 \end{verbatim}
-
-Laut Dokumentation genügt ein Neustart des SSH-Dienstes, um die Änderungen zu übernehmen. In unserem Fall war jedoch ein Neustart des Servers erforderlich.
 
 \subsection{Anpassen der Sicherheitsgruppe auf AWS}
 Damit eine Verbindung über den Port \texttt{2424} möglich ist, muss dieser Port in der Sicherheitsgruppe \texttt{PublicGitLabSecurityGroup} freigegeben werden. Beachten Sie, dass bei jedem SSH-Zugriff auf die GitLab-Instanz der alternative Port angegeben werden muss:
 
 \begin{verbatim}
-ssh ubuntu@54.221.15.220 -p 2424
+ssh ubuntu@3.238.106.29 -p 2424
 \end{verbatim}
 
 \subsection{Installation von GitLab CE mit Docker Compose}
 
-Im Anschluss wird Docker gemäß der offiziellen Dokumentation installiert. Nach erfolgreichem Test mit dem \texttt{hello-world}-Image folgen wir der GitLab-Dokumentation.
+Im Anschluss wird Docker gemäß der \href{https://docs.docker.com/engine/install/ubuntu/}{offiziellen Dokumentation} installiert. Nach erfolgreichem Test mit dem \texttt{hello-world}-Image folgen wir der \href{https://docs.gitlab.com/ee/install/docker/installation.html}{GitLab-Dokumentation} für die Installation.
 
 \subsubsection{Erstellen von Verzeichnissen zur Datenpersistenz}
 Gemäß der Dokumentation erstellen wir ein Verzeichnis für Konfigurations-, Log- und Daten-Dateien:
@@ -768,6 +763,8 @@ sudo chown -R ubuntu:ubuntu /srv/gitlab
 export GITLAB_HOME=/srv/gitlab
 \end{verbatim}
 
+\newpage
+
 \subsubsection{Erstellen des Containers mit Docker Compose}
 Wir verwenden Docker Compose, um GitLab zu installieren. Dazu erstellen wir eine Datei \texttt{docker-compose.yml} mit folgendem Inhalt:
 
@@ -777,10 +774,10 @@ services:
     image: gitlab/gitlab-ce:latest
     container_name: gitlab
     restart: always
-    hostname: 'gitlab.ilovedevops.com'
+    hostname: 'gitlab.semesterDevOps.com'
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://54.89.164.241'
+        external_url 'http://3.238.106.29'
     ports:
       - '80:80'
       - '443:443'
@@ -793,18 +790,117 @@ services:
 \end{verbatim}
 
 Die \texttt{external\_url} muss mit der öffentlichen IPv4-Adresse der GitLab-EC2-Instanz aktualisiert werden. Da die IP-Adresse nach jedem Neustart wechselt, ist eine Anpassung der Datei \texttt{docker-compose.yml} nach jedem Neustart notwendig.
-
 Zum Starten des Containers führen wir folgenden Befehl aus:
 
 \begin{verbatim}
 docker compose up -d
 \end{verbatim}
 
-GitLab ist nach kurzer Zeit unter \texttt{http://54.89.164.241} erreichbar. Der Standard-Benutzername lautet \texttt{root}, das Passwort kann mit folgendem Befehl abgerufen werden:
+GitLab ist nach kurzer Zeit unter \texttt{http://3.238.106.29} erreichbar. Der Standard-Benutzername lautet \texttt{root}, das Passwort kann mit folgendem Befehl abgerufen werden:
 
 \begin{verbatim}
 docker compose exec -it gitlab cat /etc/gitlab/initial_root_password
 \end{verbatim}
+
+
+
+
+
+
+
+\section{GitLab Runner}
+Als Nächstes installieren wir GitLab Runner auf der GitLab-Runner-EC2-Instanz.  
+Wie zuvor verbinden wir uns per SSH mit der Maschine, aktualisieren alle Systempakete, starten die Maschine neu und installieren anschließend Docker gemäß der offiziellen Dokumentation.
+
+\begin{verbatim}
+    	docker pull gitlab/gitlab-runner:latest
+\end{verbatim}
+
+\section{Installation des GitLab Runners mit Docker}
+Zuerst laden wir das neueste Docker-Image herunter, indem wir folgenden Befehl ausführen.  
+Anschließend erstellen wir ein neues Docker-Volume, um die Konfiguration auch bei Neustarts des Containers zu behalten.
+
+\begin{verbatim}
+		docker volume create gitlab-runner-config
+\end{verbatim}
+
+Danach starten wir den GitLab-Runner-Container:
+
+\begin{verbatim}
+		docker run -d --name gitlab-runner --restart always \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v gitlab-runner-config:/etc/gitlab-runner \
+		gitlab/gitlab-runner:latest
+\end{verbatim}
+
+\section{Registrierung des Runners in GitLab}
+Um den Runner zu registrieren, folgen wir der entsprechenden Dokumentation.  
+GitLab-Runner können entweder Projekten, Gruppen oder der gesamten Instanz zugeordnet werden.  
+Wir werden unseren Runner mit der gesamten Instanz verknüpfen.
+
+\section{Erstellen des Runner-Authentifizierungstokens}
+Um ein Authentifizierungstoken für den Runner zu erhalten, müssen wir über die GitLab-Weboberfläche einen Instanz-Runner hinzufügen.  
+Wie das genau funktioniert, ist in der offiziellen Dokumentation beschrieben.
+
+\section{Registering the runner}
+
+\section{Registrierung des Runners}
+Um einen neuen Runner zu registrieren, führen wir folgenden Befehl (auf der GitLab-Runner-EC2-Instanz) aus:
+
+\begin{verbatim}
+		docker run --rm -it -v gitlab-runner-config:/etc/gitlab-runner gitlab/gitlab-runner:latest
+		register
+\end{verbatim}
+
+Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vorzunehmen. Diese konfigurieren wir wie folgt:
+
+GitLab-Instanz-URL: Hier geben wir http://gitlab.DevOps.com ein. Diese URL wird von unserem DNS-Server auf den Server aufgelöst, auf dem die GitLab-Instanz läuft.
+Runner-Authentifizierungstoken: Hier geben wir das Token ein, das in der GitLab-Weboberfläche angezeigt wird.
+Executor: Wir wählen Docker.
+Standard-Docker-Image: Wir geben alpine:latest ein.
+
+\section{Integration von LDAP mit GitLab} Als Nächstes integrieren wir LDAP in GitLab. Dazu folgen wir der offiziellen Dokumentation.
+Zuerst müssen wir einige Einstellungen vornehmen, die wir über Umgebungsvariablen in Docker konfigurieren. Dafür bearbeiten wir erneut die docker-compose.yml unseres LDAP-Servers.
+
+\begin{verbatim}
+		services:
+		gitlab:
+		image: gitlab/gitlab-ce:latest
+		container_name: gitlab
+		restart: always
+		hostname: 'gitlab.ilovedevops.com'
+		environment:
+		GITLAB_OMNIBUS_CONFIG: |
+		external_url 'http://54.89.164.241'
+		gitlab_rails['ldap_enabled'] = true
+		gitlab_rails['ldap_servers'] = {
+		'main' => {
+						'label' => 'LDAP',
+						'host' => 'ldap.ilovedevops.com',
+						'port' => 389,
+						'uid' => 'uid',
+						'encryption' => 'plain',
+						'verify_certificates' => false,
+						'active_directory' => false,
+						'base' => 'dc=ilovedevops,dc=com',
+						'lowercase_usernames' => 'false'
+				}
+		}
+		ports:
+		- '80:80'
+		- '443:443'
+		- '22:22'
+		volumes:
+		- '$GITLAB_HOME/config:/etc/gitlab'
+		- '$GITLAB_HOME/logs:/var/log/gitlab'
+		- '$GITLAB_HOME/data:/var/opt/gitlab'
+		shm_size: '256m'
+\end{verbatim}
+
+Die genaue Wirkung dieser Einstellungen wird in der oben verlinkten Dokumentation ausführlich beschrieben.
+Das war’s! Benutzer können sich nun mit ihrer LDAP-UID und ihrem Passwort anmelden.
+
+
 
 
 \newpage
