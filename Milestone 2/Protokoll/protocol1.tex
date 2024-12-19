@@ -260,36 +260,49 @@ AWS CloudWatch wird zur Protokollierung und Überwachung genutzt:
 
 Um ein VPC zu erstellen müssen wir zu erst Sicherstellen, dass wir in der richtigen Region sind. 
 In unserem Fall ist das "us-east-1". 
----SCREENSHOT---
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{data/Choose_Region.png}
+	\caption{Auswahl der Region}
+	\label{fig:Auswahl der Region}
+\end{figure}
 
 \section{Creating Subnets}
-\subsection{Private Subnet}
-
-Zuerst erstellte wir ein privates Subnets. 
-Wie im Bild unten angeführt, wählen wir die richtigen VPC(10.0.0.0/16) aus
-und konfigurieren die private CIDR-Block(10.0.2.0/24).
----SCREENSHOT---
-
 \subsection{Public Subnet}
-Beim Erstellen vom Public Subnet, gehen wir die selbe Schritte durch,
-doch ändern den CIDR-Block auf 10.0.1.0/24.
----SCREENSHOT---
 
+Zuerst erstellten wir ein öffenltiches Subnet. 
+Wie im Bild unten angeführt, wählen wir den richtigen VPC(10.0.0.0/16) aus
+und konfigurieren den privaten CIDR-Block(10.0.1.0/24).
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{data/Create_Subnet.png}
+	\caption{Erstellung des Public Subnet}
+	\label{fig:Erstellung des Public Subnet}
+\end{figure}
+
+\subsection{Private Subnet}
+Beim Erstellen vom Public Subnet, gehen wir die selbe Schritte durch,
+doch ändern den CIDR-Block auf 10.0.2.0/24.
 
 \subsubsection{Enabling Auto-assign IP for Public Subnet}
 Wichtig zum Erwähnen ist die Aktivierung der Option "Enable auto-assign public IPv4 address". 
 Das sorgt dafür, dass jeder neuerstellten EC2 Instanz eine neue IP Adresse erstellt wird.
-----SCREENSHOT ODER KURZ ERKLÄREN----
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{data/Edit_subnet_enable_ipv4.png}
+	\caption{Auto-Assign aktivieren}
+	\label{fig:Auto-Assign aktivieren}
+\end{figure}
 
 
 
 \section{Internet Access}
 \subsection{Enabling Internet Access for Public Subnet}
-Doch eine Subnet Public zu setzen reicht nicht, Sie muss auch einen Internetzugriff bekommen.
-Dafür verwenden wir die 'route-table', die wiederum Zugriff auf das Internet Gateway gewährt.
+Doch eine Subnet Public zu setzen reicht nicht, sie muss auch einen Internetzugriff bekommen.
+Dafür verwenden wir Route-Tables, die wiederum Zugriff auf das Internet Gateway gewähren.
 
 \subsubsection{Internet Gateway}
-Zuerst erstellen wir ein Gateway, mit dem Namen 'Semester-igw'. 
+Zuerst erstellen wir ein Gateway, mit dem Namen 'semester-igw'. 
 Dem Gateway geben wir zusätzlich Tags, um später die Suche von diesem zu erleichtern.
 
 \begin{figure}[h!]
@@ -300,7 +313,7 @@ Dem Gateway geben wir zusätzlich Tags, um später die Suche von diesem zu erlei
 \end{figure}
 
 Das Gateway ist erstellt, aber ist keinem VPC zugewiesen. 
-Beim Gateway unter 'Actions' fügen wir dies hinzu.
+Beim Gateway unter 'Actions -> Attach to VPC' fügen wir dies hinzu.
 
 \begin{figure}[h!]
 	\centering
@@ -310,25 +323,42 @@ Beim Gateway unter 'Actions' fügen wir dies hinzu.
 \end{figure}
 
 \subsubsection{Routing Table}
-Jetzt aktualisieren wir eine neue Routing Table, damit das Gateway Internetzugriff hat.
-In dem Tab "Route Tables" editieren wir die Table mit dem Wert "----SUCHE WERT----".
-----SCHRITT MIT "TAG" GEMACHT ODER NICHT????----
+Jetzt aktualisieren wir den neuen Routing Table, damit das Gateway Internetzugriff hat.
+In dem Tab "Route Tables" editieren wir den Table mit dem Namen "rtb-public-semester".
 
-Nun selectieren wir die Table. 
-
-----WAS PASSIERT HIER????----
-
-
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{data/Edit_Routes_Public.png}
+	\caption{Routen des Public Route Tables anpassen}
+	\label{fig:Attach Routen des Public Route Tables anpassen}
+\end{figure}
 
 \subsection{Enabling Internet Access for Private Subnet}
 Das private Subnet hat keinen direkten Zugriff, sondern nutzt ein NAT Gateway vom Public Subnet.
 
 \subsubsection{NAT Gateway}
-----SCREENSHOT----
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{data/Create_NAT.png}
+	\caption{Erstellung des NAT Gateways}
+	\label{fig:Erstellung des NAT Gateways}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{data/Create_Nat2.png}
+	\caption{Erstellung des NAT Gateways}
+	\label{fig:Erstellung des NAT Gateways}
+\end{figure}
 
 \subsubsection{Routing Table}
-Wie beim Public Subnet, muss nun die Routing Table aktualisieren.
-----SCREENSHOT----
+Wie beim Public Subnet, muss man nun den Routing Table aktualisieren.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{data/Edit_Routes_Private.png}
+	\caption{Routen des Private Route Tables anpassen}
+	\label{fig:Attach Routen des Private Route Tables anpassen}
+\end{figure}
 
 \section{Security Groups}
 Für das Projekt haben wir mehrere Security Groups erstellt.
