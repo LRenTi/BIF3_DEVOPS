@@ -262,7 +262,7 @@ Um ein VPC zu erstellen müssen wir zu erst Sicherstellen, dass wir in der richt
 In unserem Fall ist das "us-east-1". 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{data/Choose_Region.png}
+	\includegraphics[width=0.5\textwidth]{data/Choose_Region.png}
 	\caption{Auswahl der Region}
 	\label{fig:Auswahl der Region}
 \end{figure}
@@ -323,7 +323,7 @@ Beim Gateway unter 'Actions -> Attach to VPC' fügen wir dies hinzu.
 \end{figure}
 
 \subsubsection{Routing Table}
-Jetzt aktualisieren wir den neuen Routing Table, damit das Gateway Internetzugriff hat.
+Jetzt aktualisieren wir die neue Routing Table, damit das Gateway Internetzugriff hat.
 In dem Tab "Route Tables" editieren wir den Table mit dem Namen "rtb-public-semester".
 
 \begin{figure}[h!]
@@ -351,14 +351,16 @@ Das private Subnet hat keinen direkten Zugriff, sondern nutzt ein NAT Gateway vo
 	\label{fig:Erstellung des NAT Gateways}
 \end{figure}
 
-\subsubsection{Routing Table}
-Wie beim Public Subnet, muss man nun den Routing Table aktualisieren.
+\paragraph{Routing Table}
+Wie beim Public Subnet, muss man nun die Routing Table aktualisieren, nur für den NAT Gateway anstatt des Internet Gateways.
 \begin{figure}[h!]
 	\centering
 	\includegraphics[width=\textwidth]{data/Edit_Routes_Private.png}
 	\caption{Routen des Private Route Tables anpassen}
 	\label{fig:Attach Routen des Private Route Tables anpassen}
 \end{figure}
+
+\newpage
 
 \section{Security Groups}
 Für das Projekt haben wir mehrere Security Groups erstellt.
