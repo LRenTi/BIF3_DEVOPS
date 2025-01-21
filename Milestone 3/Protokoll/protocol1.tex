@@ -1119,17 +1119,23 @@ Um den LDAP-Server zu installieren, müssen wir zuerst eine neue EC2-Instanz ers
 
 
 \subsubsection{DNS Eintrag für LDAP Server}
-In den DNS Server Primary und Seconday muss in Zugriffskontrollliste die IP Adresse des LDAP Servers hinzugefügt werden. Siehe oben im Abschnitt \ref{sec:dns-acces-controll-list}. 
+In den DNS Server Primary und Secondary muss in Zugriffskontrollliste die IP Adresse des LDAP Servers hinzugefügt werden. Siehe oben im Abschnitt \ref{sec:dns-acces-controll-list}. 
 
 \subsection{LDAP}
 Als nächstes richten wir den OpenLDAP-Server ein. Dazu verbinden wir uns über SSH mit der LDAP-EC2-Instanz, aktualisieren alle Systempakete und starten das System neu.
+
+\begin{verbatim}
+	sudo apt update && sudo apt upgrade && sudo apt full-upgrade
+	sudo reboot
+\end{verbatim}
+
 Dann installieren wir den LDAP-Server und die Kommandozeilen-Utilities:
 
 \begin{verbatim}
 sudo apt install slapd ldap-utils
 \end{verbatim}
 
-Während dieses Prozesses werden wir aufgefordert, ein Passwort für den LDAP-Admin-Benutzer festzulegen. Wir entscheiden uns für "admin", damit es einfacher zu merken ist.
+Während dieses Prozesses werden wir aufgefordert, ein Passwort für den LDAP-Admin-Benutzer festzulegen. Wir entscheiden uns für 'admin', damit es einfacher zu merken ist.
 
 Als nächstes ändern wir den Directory Information Tree (DIT), um ihn an unseren Domainnamen anzupassen:
 
@@ -1137,7 +1143,7 @@ Als nächstes ändern wir den Directory Information Tree (DIT), um ihn an unsere
 sudo dpkg-reconfigure slapd
 \end{verbatim}
 
-Um das DIT-Suffix auf dc=semesterDevOps,dc=com zu ändern, geben wir ilovedevops.com ein, wenn wir nach dem DNS-Domainnamen gefragt werden.
+Um das DIT-Suffix auf 'dc=semesterDevOps,dc=com' zu ändern, geben wir ilovedevops.com ein, wenn wir nach dem DNS-Domainnamen gefragt werden.
 
 Als nächstes konfigurieren wir einige Standardwerte, um uns später Tipparbeit zu ersparen.
 Führen Sie aus:
@@ -1156,26 +1162,12 @@ Der genaue Dateiname ist nicht entscheidend, solange er später korrekt referenz
 Mit dem Kommando \texttt{sudo nano add\_content.ldif} wird die LDIF-Datei für eine Person geändert:
 
 
-\begin{verbatim}
-dn: ou=People,dc=semesterDevOps,dc=com
-objectClass: organizationalUnit
-ou: People
-dn: uid=Samuel,ou=People,dc=semesterDevOps,dc=com
-objectClass: inetOrgPerson
-objectClass: posixAccount
-objectClass: shadowAccount
-uid: Samuel
-sn: Hammerschmidt
-givenName: Samuel
-cn: Samuel Hammerschmidt
-displayName: Samuel Hammerschmidt
-uidNumber: 10000
-gidNumber: 5000
-userPassword: {CRYPT}x
-gecos: Samuel Hammerschmidt
-loginShell: /bin/bash
-homeDirectory: /home/samuel
-\end{verbatim}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{data/suche_1.png}
+	\caption{Erstellen einer Person}
+	\label{fig:Erstellen einer Person}
+\end{figure}
 
 
 
@@ -1187,9 +1179,13 @@ ldapadd -x -D cn=admin,dc=semesterDevOps,dc=com -W -f add_content.ldif
 
 Wir können überprüfen, ob alle Daten erfolgreich hinzugefügt wurden, indem wir folgenden Befehl ausführen:
 
-\begin{verbatim}
-ldapsearch -x -LLL -b dc=semesterDevOps,dc=com '(uid=Samuel)' cn gidNumber
-\end{verbatim}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{data/suche_2.png}
+	\caption{Suchen einer Person}
+	\label{fig:Suchen einer Person}
+\end{figure}
+
 
 Nun müssen wir ein gültiges Passwort für den Benutzer David festlegen. Wir haben bisher nur {CRYPT}x als Platzhalter verwendet, um ein Konto ohne Passwort zu erstellen.
 (Streng genommen ist {CRYPT}x auch ein gültiges Passwort. Allerdings gibt es keine Eingabe für die Hash-Funktion, die zu der Ausgabe x führt, was bedeutet, dass wir im Grunde ein ungültiges Passwort definiert haben.)
@@ -1217,40 +1213,13 @@ Wir können weitere Benutzer hinzufügen, indem wir die erforderlichen Schritte 
 Als nächstes werden wir LDAP mit GitLab integrieren. Dazu folgen wir der offiziellen Dokumentation.
 Zunächst müssen wir einige Einstellungen konfigurieren, die wir über Umgebungsvariablen in Docker vornehmen. Bearbeiten wir also erneut die docker-compose.yml unseres LDAP-Servers:
 
-\begin{verbatim}
-services:
-    gitlab:
-        image: gitlab/gitlab-ce:latest
-        container_name: gitlab
-        restart: always
-        hostname: 'gitlab.semesterDevOps.com'
-        environment:
-            GITLAB_OMNIBUS_CONFIG: |
-                external_url 'http://54.89.164.241'
-                gitlab_rails['ldap_enabled'] = true
-                gitlab_rails['ldap_servers'] = {
-                    'main' => {
-                        'label' => 'LDAP',
-                        'host' => 'ldap.semesterDevOps.com',
-                        'port' => 389,
-                        'uid' => 'uid',
-                        'encryption' => 'plain',
-                        'verify_certificates' => false,
-                        'active_directory' => false,
-                        'base' => 'dc=semesterDevOps,dc=com',
-                        'lowercase_usernames' => 'false'
-                    }
-                }
-        ports:
-            - '80:80'
-            - '443:443'
-            - '22:22'
-        volumes:
-            - '$GITLAB_HOME/config:/etc/gitlab'
-            - '$GITLAB_HOME/logs:/var/log/gitlab'
-            - '$GITLAB_HOME/data:/var/opt/gitlab'
-        shm_size: '256m'
-\end{verbatim}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{data/dockerfile.png}
+	\caption{Gitlab Yaml erstellen}
+	\label{fig:Gitlab Yaml erstellen}
+\end{figure}
+
 
 Die genaue Wirkung all dieser Einstellungen ist in der oben verlinkten Dokumentation gut beschrieben.
 Benutzer können sich nun mit ihrer LDAP-UID und ihrem Passwort anmelden.
