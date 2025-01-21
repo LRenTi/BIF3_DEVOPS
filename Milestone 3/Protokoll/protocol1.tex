@@ -12,7 +12,7 @@
 
 \geometry{a4paper, margin=1in}
 
-\title{Milestone 1: Infrastruktur-Spezifikation}
+\title{Projektabgabe: DevOps}
 \author{Hammerschmidt, Rentenberger, Schodl, Weidinger}
 \date{\today}
 
@@ -180,7 +180,7 @@
 	\item \textbf{Erwartetes Ergebnis:} Der Server bleibt auch unter Last genau und leistungsfähig.
 \end{itemize}
 
-subsection*{LDAP-Authentifizierungstest}
+\subsection*{LDAP-Authentifizierungstest}
 \begin{itemize}[label=--]
 	\item \textbf{Ziel:} Funktionalität des Authentifizierungssystems überprüfen.
 	\item \textbf{Methode:} Benutzeranmeldungen über LDAP versuchen. Tests mit gültigen und ungültigen Anmeldedaten durchführen.
@@ -750,7 +750,8 @@ Sobald die Syntax überprüft wurde, müssen wir BIND9 neustarten, damit die Än
 Der sekundäre DNS-Server wird alle Einträge des primären DNS-Servers spiegeln 
 und alle Anfragen beantworten, wenn der primäre DNS-Server nicht verfügbar ist.  
 
-\subsection{Einrichten der Zugriffskontrollliste und allgemeiner Optionen}  
+\subsection{Einrichten der Zugriffskontrollliste und allgemeiner Optionen}
+\label{sec:dns-acces-controll-list}  
 
 Sowie der erste DNS, brauch der Zweite ebenfalls eine Access Control List.
 \begin{verbatim}
@@ -1001,7 +1002,7 @@ GitLab ist nach kurzer Zeit unter \texttt{http://98.80.148.9} erreichbar. Der St
 
 \begin{verbatim}
 docker compose exec -it gitlab cat /etc/gitlab/initial_root_password
-\end{verbatim}
+	\end{verbatim}
 
 \begin{figure}[H]
 	\centering
@@ -1082,9 +1083,19 @@ Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vo
 
 \section{LDAP Server}
 \subsection{Vorbereitung}
-\subsubsection{Instance}
+Um den LDAP-Server zu installieren, müssen wir zuerst eine neue EC2-Instanz erstellen und die Sicherheitsgruppe \texttt{LDAP} erstellen.
+\newpage
+\subsubsection{Instance erstellen}
 
-
+\begin{itemize}
+    \item \textbf{Name:} LDAP
+    \item \textbf{OS:} Latest LTS Release of Ubuntu $\rightarrow$ Ubuntu 24.04
+    \item \textbf{Instance Type:} t2.micro
+    \item \textbf{VPC:} vpc-devops
+    \item \textbf{Subnet:} sn-1a-private-devops (Private Subnet)
+    \item \textbf{Public IP:} No
+    \item \textbf{Security Group:} LDAPSecurityGroup
+\end{itemize}
 
 \subsubsection{Security Group}
 \begin{table}[h!]
@@ -1095,7 +1106,7 @@ Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vo
 			\textbf{Type}       & \textbf{Internet-Protokoll}   & \textbf{Port} & \textbf{Source}   & \textbf{Desc.}   \\ \hline
 			Inbound   	& TCP 	& 389 		& 0.0.0.0/0    	& LDAP                 			\\ \hline
 			Inbound 	& TCP 	& 639 		& 0.0.0.0/0    	& LDAP over SSL                	\\ \hline
-			Inbound     & TCP 	& 22 		& 0.0.0.0/0     & SSH               	\\ \hline
+			Inbound     & TCP 	& 22 		& 0.0.0.0/0     & SSH               	        \\ \hline
 			Outbound    & ALL 	& ALL       & 0.0.0.0/0		& Allow all outbound traffic    \\ \hline
 		\end{tabular}
 	}
@@ -1103,10 +1114,143 @@ Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vo
 	\label{tab:sec-Group-GitLab-Public}
 \end{table}
 
-\subsubsection{DNS Eintrag für LDAP Server}
-In den DNS Server Primary und Seconday muss in der access controll list die IP Adresse des LDAP Servers hinzugefügt werden.
 
-\subsection{Installation von OpenLDAP}
+\subsubsection{DNS Eintrag für LDAP Server}
+In den DNS Server Primary und Seconday muss in Zugriffskontrollliste die IP Adresse des LDAP Servers hinzugefügt werden. Siehe oben im Abschnitt \ref{sec:dns-acces-controll-list}. 
+
+\subsection{LDAP}
+Als nächstes richten wir den OpenLDAP-Server ein. Dazu verbinden wir uns über SSH mit der LDAP-EC2-Instanz, aktualisieren alle Systempakete und starten das System neu.
+Dann installieren wir den LDAP-Server und die Kommandozeilen-Utilities:
+
+\begin{verbatim}
+sudo apt install slapd ldap-utils
+\end{verbatim}
+
+Während dieses Prozesses werden wir aufgefordert, ein Passwort für den LDAP-Admin-Benutzer festzulegen. Wir entscheiden uns für "admin", damit es einfacher zu merken ist.
+
+Als nächstes ändern wir den Directory Information Tree (DIT), um ihn an unseren Domainnamen anzupassen:
+
+\begin{verbatim}
+sudo dpkg-reconfigure slapd
+\end{verbatim}
+
+Um das DIT-Suffix auf dc=semesterDevOps,dc=com zu ändern, geben wir ilovedevops.com ein, wenn wir nach dem DNS-Domainnamen gefragt werden.
+
+Als nächstes konfigurieren wir einige Standardwerte, um uns später Tipparbeit zu ersparen.
+Führen Sie aus:
+
+\begin{verbatim}
+sudo nano /etc/ldap/ldap.conf
+\end{verbatim}
+
+und fügen Sie diese Zeilen hinzu:
+
+\subsubsection{Verzeichnis füllen}
+
+Lassen Sie uns eine Organisationseinheit für 'People' erstellen, in der wir eine Person namens David hinzufügen. Um die Einträge in das Verzeichnis hinzuzufügen, verwenden wir das LDAP Data Interchange Format (LDIF). Dies ist ein standardisiertes Textformat, das verwendet wird, um Daten für LDAP-Verzeichnisse zu definieren. 
+Erstellen Sie eine neue LDIF-Datei und nennen Sie sie beispielsweise \begin{verbatim}add_content.ldif\end{verbatim}
+Der genaue Dateiname ist nicht entscheidend, solange er später korrekt referenziert wird.
+Mit dem Kommando \texttt{sudo nano add\_content.ldif} wird die LDIF-Datei für eine Person geändert:
+
+
+\begin{verbatim}
+dn: ou=People,dc=semesterDevOps,dc=com
+objectClass: organizationalUnit
+ou: People
+dn: uid=Samuel,ou=People,dc=semesterDevOps,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: Samuel
+sn: Hammerschmidt
+givenName: Samuel
+cn: Samuel Hammerschmidt
+displayName: Samuel Hammerschmidt
+uidNumber: 10000
+gidNumber: 5000
+userPassword: {CRYPT}x
+gecos: Samuel Hammerschmidt
+loginShell: /bin/bash
+homeDirectory: /home/samuel
+\end{verbatim}
+
+
+
+Wir können die in dieser Datei angegebenen Informationen dem LDAP-Verzeichnis hinzufügen, indem wir folgenden Befehl ausführen:
+
+\begin{verbatim}
+ldapadd -x -D cn=admin,dc=semesterDevOps,dc=com -W -f add_content.ldif
+\end{verbatim}
+
+Wir können überprüfen, ob alle Daten erfolgreich hinzugefügt wurden, indem wir folgenden Befehl ausführen:
+
+\begin{verbatim}
+ldapsearch -x -LLL -b dc=semesterDevOps,dc=com '(uid=Samuel)' cn gidNumber
+\end{verbatim}
+
+Nun müssen wir ein gültiges Passwort für den Benutzer David festlegen. Wir haben bisher nur {CRYPT}x als Platzhalter verwendet, um ein Konto ohne Passwort zu erstellen.
+(Streng genommen ist {CRYPT}x auch ein gültiges Passwort. Allerdings gibt es keine Eingabe für die Hash-Funktion, die zu der Ausgabe x führt, was bedeutet, dass wir im Grunde ein ungültiges Passwort definiert haben.)
+Um das Passwort in ein gültiges zu ändern, können wir ldappasswd verwenden:
+
+\begin{verbatim}
+ldappasswd -x -D cn=admin,dc=semesterDevOps,dc=com -W -S 
+uid=//USERNAME,ou=people,dc=semesterDevOps,dc=com
+Passwort: //PASSWORD
+\end{verbatim}
+
+\subsubsection{LDAP-Server Verbindung testen}
+
+Schließlich können wir testen, ob der LDAP-Server von anderen Instanzen aus erreichbar ist. Wechseln wir zur GitLab-Instanz, installieren LDAP-Utils und führen aus:
+
+\begin{verbatim}
+ldapsearch -x -LLL -H ldap://ldap.semesterDevOps.com -b dc=semesterDevOps,dc=com 
+'(uid=// USERNAME)' cn gidNumber
+\end{verbatim}
+
+Wir können weitere Benutzer hinzufügen, indem wir die erforderlichen Schritte beliebig oft wiederholen.
+
+\subsection{Integration von LDAP mit GitLab}
+
+Als nächstes werden wir LDAP mit GitLab integrieren. Dazu folgen wir der offiziellen Dokumentation.
+Zunächst müssen wir einige Einstellungen konfigurieren, die wir über Umgebungsvariablen in Docker vornehmen. Bearbeiten wir also erneut die docker-compose.yml unseres LDAP-Servers:
+
+\begin{verbatim}
+services:
+    gitlab:
+        image: gitlab/gitlab-ce:latest
+        container_name: gitlab
+        restart: always
+        hostname: 'gitlab.semesterDevOps.com'
+        environment:
+            GITLAB_OMNIBUS_CONFIG: |
+                external_url 'http://54.89.164.241'
+                gitlab_rails['ldap_enabled'] = true
+                gitlab_rails['ldap_servers'] = {
+                    'main' => {
+                        'label' => 'LDAP',
+                        'host' => 'ldap.semesterDevOps.com',
+                        'port' => 389,
+                        'uid' => 'uid',
+                        'encryption' => 'plain',
+                        'verify_certificates' => false,
+                        'active_directory' => false,
+                        'base' => 'dc=semesterDevOps,dc=com',
+                        'lowercase_usernames' => 'false'
+                    }
+                }
+        ports:
+            - '80:80'
+            - '443:443'
+            - '22:22'
+        volumes:
+            - '$GITLAB_HOME/config:/etc/gitlab'
+            - '$GITLAB_HOME/logs:/var/log/gitlab'
+            - '$GITLAB_HOME/data:/var/opt/gitlab'
+        shm_size: '256m'
+\end{verbatim}
+
+Die genaue Wirkung all dieser Einstellungen ist in der oben verlinkten Dokumentation gut beschrieben.
+Benutzer können sich nun mit ihrer LDAP-UID und ihrem Passwort anmelden.
 
 
 
