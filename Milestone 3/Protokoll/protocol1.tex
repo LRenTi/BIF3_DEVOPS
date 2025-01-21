@@ -12,7 +12,7 @@
 
 \geometry{a4paper, margin=1in}
 
-\title{Milestone 1: Infrastruktur-Spezifikation}
+\title{Projektabgabe: DevOps}
 \author{Hammerschmidt, Rentenberger, Schodl, Weidinger}
 \date{\today}
 
@@ -750,7 +750,8 @@ Sobald die Syntax überprüft wurde, müssen wir BIND9 neustarten, damit die Än
 Der sekundäre DNS-Server wird alle Einträge des primären DNS-Servers spiegeln 
 und alle Anfragen beantworten, wenn der primäre DNS-Server nicht verfügbar ist.  
 
-\subsection{Einrichten der Zugriffskontrollliste und allgemeiner Optionen}  
+\subsection{Einrichten der Zugriffskontrollliste und allgemeiner Optionen}
+\label{sec:dns-acces-controll-list}  
 
 Sowie der erste DNS, brauch der Zweite ebenfalls eine Access Control List.
 \begin{verbatim}
@@ -1082,9 +1083,19 @@ Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vo
 
 \section{LDAP Server}
 \subsection{Vorbereitung}
-\subsubsection{Instance}
+Um den LDAP-Server zu installieren, müssen wir zuerst eine neue EC2-Instanz erstellen und die Sicherheitsgruppe \texttt{LDAP} erstellen.
+\newpage
+\subsubsection{Instance erstellen}
 
-
+\begin{itemize}
+    \item \textbf{Name:} LDAP
+    \item \textbf{OS:} Latest LTS Release of Ubuntu $\rightarrow$ Ubuntu 24.04
+    \item \textbf{Instance Type:} t2.micro
+    \item \textbf{VPC:} vpc-devops
+    \item \textbf{Subnet:} sn-1a-private-devops (Private Subnet)
+    \item \textbf{Public IP:} No
+    \item \textbf{Security Group:} LDAPSecurityGroup
+\end{itemize}
 
 \subsubsection{Security Group}
 \begin{table}[h!]
@@ -1103,8 +1114,9 @@ Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vo
 	\label{tab:sec-Group-GitLab-Public}
 \end{table}
 
+
 \subsubsection{DNS Eintrag für LDAP Server}
-In den DNS Server Primary und Seconday muss in der access controll list die IP Adresse des LDAP Servers hinzugefügt werden.
+In den DNS Server Primary und Seconday muss in Zugriffskontrollliste die IP Adresse des LDAP Servers hinzugefügt werden. Siehe oben im Abschnitt \ref{sec:dns-acces-controll-list}. 
 
 \subsection{Installation von OpenLDAP}
 
