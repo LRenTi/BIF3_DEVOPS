@@ -579,6 +579,7 @@ In der Local File geben wir die Forward- und Reverse-Zonen an, die den Bereich f
 \end{verbatim}
 
 \subsubsection{Hinzufügen der Forward Zone}
+\label{subsec:forward-zone}
 \begin{verbatim}
 		zone "semesterDevOps.com" {
 		type primary;
@@ -1121,6 +1122,9 @@ Um den LDAP-Server zu installieren, müssen wir zuerst eine neue EC2-Instanz ers
 \subsubsection{DNS Eintrag für LDAP Server}
 In den DNS Server Primary und Seconday muss in Zugriffskontrollliste die IP Adresse des LDAP Servers hinzugefügt werden. Siehe oben im Abschnitt \ref{sec:dns-acces-controll-list}. 
 
+\subsubsection{Zone Files}
+Im Primary DNS Server müssen die Zone Files für die LDAP Domain hinzugefügt werden. Siehe oben im Abschnitt \ref{subsec:forward-zone} und folgende.
+
 \subsection{LDAP}
 Als nächstes richten wir den OpenLDAP-Server ein. Dazu verbinden wir uns über SSH mit der LDAP-EC2-Instanz, aktualisieren alle Systempakete und starten das System neu.
 Dann installieren wir den LDAP-Server und die Kommandozeilen-Utilities:
@@ -1150,7 +1154,7 @@ und fügen Sie diese Zeilen hinzu:
 
 \subsubsection{Verzeichnis füllen}
 
-Lassen Sie uns eine Organisationseinheit für 'People' erstellen, in der wir eine Person namens David hinzufügen. Um die Einträge in das Verzeichnis hinzuzufügen, verwenden wir das LDAP Data Interchange Format (LDIF). Dies ist ein standardisiertes Textformat, das verwendet wird, um Daten für LDAP-Verzeichnisse zu definieren. 
+Lassen Sie uns eine Organisationseinheit für 'People' erstellen, in der wir eine Person namens Samuel hinzufügen. Um die Einträge in das Verzeichnis hinzuzufügen, verwenden wir das LDAP Data Interchange Format (LDIF). Dies ist ein standardisiertes Textformat, das verwendet wird, um Daten für LDAP-Verzeichnisse zu definieren. 
 Erstellen Sie eine neue LDIF-Datei und nennen Sie sie beispielsweise \begin{verbatim}add_content.ldif\end{verbatim}
 Der genaue Dateiname ist nicht entscheidend, solange er später korrekt referenziert wird.
 Mit dem Kommando \texttt{sudo nano add\_content.ldif} wird die LDIF-Datei für eine Person geändert:
@@ -1191,7 +1195,7 @@ Wir können überprüfen, ob alle Daten erfolgreich hinzugefügt wurden, indem w
 ldapsearch -x -LLL -b dc=semesterDevOps,dc=com '(uid=Samuel)' cn gidNumber
 \end{verbatim}
 
-Nun müssen wir ein gültiges Passwort für den Benutzer David festlegen. Wir haben bisher nur {CRYPT}x als Platzhalter verwendet, um ein Konto ohne Passwort zu erstellen.
+Nun müssen wir ein gültiges Passwort für den Benutzer Samuel festlegen. Wir haben bisher nur {CRYPT}x als Platzhalter verwendet, um ein Konto ohne Passwort zu erstellen.
 (Streng genommen ist {CRYPT}x auch ein gültiges Passwort. Allerdings gibt es keine Eingabe für die Hash-Funktion, die zu der Ausgabe x führt, was bedeutet, dass wir im Grunde ein ungültiges Passwort definiert haben.)
 Um das Passwort in ein gültiges zu ändern, können wir ldappasswd verwenden:
 
