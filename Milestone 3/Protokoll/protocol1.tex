@@ -1121,9 +1121,34 @@ Um den LDAP-Server zu installieren, müssen wir zuerst eine neue EC2-Instanz ers
 
 \subsubsection{DNS Eintrag für LDAP Server}
 In den DNS Server Primary und Secondary muss in Zugriffskontrollliste die IP Adresse des LDAP Servers hinzugefügt werden. Siehe oben im Abschnitt \ref{sec:dns-acces-controll-list}. 
+Als Referenz haben wir unsere Änderung dokumentiert:
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{data/2_add_ldap_to_DNS.png}
+	\caption{IDAP zu Access Contoll List hinzugefügt}
+	\label{fig:IDAP zu Access Contoll List hinzugefügt}
+\end{figure}
 
 \subsubsection{Zone Files}
 Im Primary DNS Server müssen die Zone Files für die LDAP Domain hinzugefügt werden. Siehe oben im Abschnitt \ref{subsec:forward-zone} und folgende.
+Als Referenz haben wir unsere Änderung dokumentiert:
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{data/3_add_ldap_to_zone_files.png}
+	\caption{IDAP im DNS Lookup hinzugefügt}
+	\label{fig:IDAP im DNS Lookup hinzugefügt}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{data/4_add_ldap_to_zone_files_reverse.png}
+	\caption{IDAP im DNS Reverse-Lookup hinzugefügt}
+	\label{fig:IDAP im DNS Reverse-Lookup hinzugefügt}
+\end{figure}
+
+
+
 
 \subsection{LDAP}
 Als nächstes richten wir den OpenLDAP-Server ein. Dazu verbinden wir uns über SSH mit der LDAP-EC2-Instanz, aktualisieren alle Systempakete und starten das System neu.
