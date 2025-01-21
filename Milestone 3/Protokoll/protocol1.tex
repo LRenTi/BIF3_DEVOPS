@@ -1080,6 +1080,36 @@ Nach Ausführung dieses Befehls werden wir aufgefordert, einige Einstellungen vo
 	\label{fig:GitLab Runner ist Online}
 \end{figure}
 
+\section{LDAP Server}
+\subsection{Vorbereitung}
+\subsubsection{Instance}
+
+
+
+\subsubsection{Security Group}
+\begin{table}[h!]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textbf{Type}       & \textbf{Internet-Protokoll}   & \textbf{Port} & \textbf{Source}   & \textbf{Desc.}   \\ \hline
+			Inbound   	& TCP 	& 389 		& 0.0.0.0/0    	& LDAP                 			\\ \hline
+			Inbound 	& TCP 	& 639 		& 0.0.0.0/0    	& LDAP over SSL                	\\ \hline
+			Inbound     & TCP 	& 22 		& 0.0.0.0/0     & SSH               	\\ \hline
+			Outbound    & ALL 	& ALL       & 0.0.0.0/0		& Allow all outbound traffic    \\ \hline
+		\end{tabular}
+	}
+	\caption{Security Group: LDAP}
+	\label{tab:sec-Group-GitLab-Public}
+\end{table}
+
+\subsubsection{DNS Eintrag für LDAP Server}
+In den DNS Server Primary und Seconday muss in der access controll list die IP Adresse des LDAP Servers hinzugefügt werden.
+
+\subsection{Installation von OpenLDAP}
+
+
+
 \newpage
 \addcontentsline{toc}{section}{Abbildungsverzeichnis}
 \listoffigures
