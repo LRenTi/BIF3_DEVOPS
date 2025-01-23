@@ -1125,8 +1125,8 @@ Als Referenz haben wir unsere Änderung dokumentiert:
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\textwidth]{data/2_add_ldap_to_DNS.png}
-	\caption{IDAP zu Access Contoll List hinzugefügt}
-	\label{fig:IDAP zu Access Contoll List hinzugefügt}
+	\caption{LDAP zu Access Contoll List hinzugefügt}
+	\label{fig:LDAP zu Access Contoll List hinzugefügt}
 \end{figure}
 
 \subsubsection{Zone Files}
@@ -1135,16 +1135,16 @@ Als Referenz haben wir unsere Änderung dokumentiert:
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\textwidth]{data/3_add_ldap_to_zone_files.png}
-	\caption{IDAP im DNS Lookup hinzugefügt}
-	\label{fig:IDAP im DNS Lookup hinzugefügt}
+	\caption{LDAP im DNS Lookup hinzugefügt}
+	\label{fig:LDAP im DNS Lookup hinzugefügt}
 \end{figure}
 
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\textwidth]{data/4_add_ldap_to_zone_files_reverse.png}
-	\caption{IDAP im DNS Reverse-Lookup hinzugefügt}
-	\label{fig:IDAP im DNS Reverse-Lookup hinzugefügt}
+	\caption{LDAP im DNS Reverse-Lookup hinzugefügt}
+	\label{fig:LDAP im DNS Reverse-Lookup hinzugefügt}
 \end{figure}
 
 
@@ -1216,8 +1216,7 @@ Wir können überprüfen, ob alle Daten erfolgreich hinzugefügt wurden, indem w
 \end{figure}
 
 
-Nun müssen wir ein gültiges Passwort für den Benutzer Samuel festlegen. Wir haben bisher nur {CRYPT}x als Platzhalter verwendet, um ein Konto ohne Passwort zu erstellen.
-(Streng genommen ist {CRYPT}x auch ein gültiges Passwort. Allerdings gibt es keine Eingabe für die Hash-Funktion, die zu der Ausgabe x führt, was bedeutet, dass wir im Grunde ein ungültiges Passwort definiert haben.)
+Nun müssen wir ein gültiges Passwort für den Benutzer Samuel festlegen. Wir haben bisher nur einen Platzhalter verwendet, um ein Konto ohne Passwort zu erstellen.
 Um das Passwort in ein gültiges zu ändern, können wir ldappasswd verwenden:
 
 \begin{verbatim}
